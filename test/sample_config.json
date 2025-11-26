@@ -1,0 +1,71 @@
+{
+  "autostart_monitoring": false,
+  "default_notify": true,
+  "check_interval": 30,
+  "default_streamlink_args": "--title \"{author} - {title}\" --retry-max 5 --stream-segment-timeout 20",
+  "default_quality": "720p",
+  "default_media_player": "mpv",
+  "left_click_action": "open_config",
+  "streams": [
+    {
+      "url": "https://www.twitch.tv/hasanabi",
+      "name": "HasanAbi",
+      "type": "twitch",
+      "quality": "best",
+      "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
+      "notify": true
+    },
+    {
+      "url": "https://www.twitch.tv/denims",
+      "name": "Denims",
+      "type": "twitch",
+      "quality": "best",
+      "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
+      "notify": true
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=gCNeDWCI0vo",
+      "name": "Al Jazeera",
+      "type": "youtube",
+      "notify": false
+    },
+    {
+      "url": "https://www.twitch.tv/gladd",
+      "name": "Gladd",
+      "type": "twitch",
+      "quality": "best",
+      "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
+      "notify": false
+    },
+    {
+      "url": "https://www.twitch.tv/39daph",
+      "name": "39daph",
+      "type": "twitch",
+      "quality": "best",
+      "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
+      "notify": false
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=jfKfPfyJRdk",
+      "name": "LoFi Girl Relax",
+      "type": "youtube",
+      "quality": "worst",
+      "notify": false
+    },
+    {
+      "url": "https://www.youtube.com/watch?v=4xDzrJKXOOY",
+      "name": "LoFi Girl Synth",
+      "type": "youtube",
+      "quality": "worst",
+      "notify": false
+    }
+  ],
+  "windows": {
+    "settings_window": {
+      "x": 0,
+      "y": 0,
+      "width": 796,
+      "height": 738
+    }
+  }
+}
