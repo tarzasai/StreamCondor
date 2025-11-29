@@ -1,7 +1,5 @@
-"""
-Edit Stream dialog for StreamCondor.
-"""
 import logging
+import platform
 from PyQt6.QtWidgets import (
   QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit, QDialogButtonBox,
   QCheckBox, QTextEdit, QPushButton, QGridLayout, QWidget, QApplication
@@ -9,25 +7,21 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont
 
-from configuration import Configuration
-from favicons import Favicons
-from sluser import sls
-from launcher import StreamLauncher
+from model import Configuration, Stream
+from favicons import get_favicon
+from slhelper import sls, build_sl_command
 
 
 log = logging.getLogger(__name__)
 
 
 class StreamDialog(QDialog):
-  """Dialog for adding or editing a stream."""
 
   def __init__(
     self,
     parent: QWidget,
     configuration: Configuration,
-    favicons: Favicons,
-    launcher: StreamLauncher,
-    stream: dict | None = None,
+    stream: Stream | None = None,
     is_clone: bool = False,
   ):
     """Initialize edit stream dialog.
@@ -35,29 +29,25 @@ class StreamDialog(QDialog):
     Args:
       parent: Parent widget
       configuration: Configuration instance
-      favicons: Favicons instance
-      launcher: StreamLauncher instance
-      stream: Stream configuration to edit (None for new stream)
+      stream: Stream configuration object to edit (None for new stream)
       is_clone: Whether this is a clone of an existing stream
     """
     super().__init__(parent)
     self.cfg = configuration
-    self.favicons = favicons
-    self.launcher = launcher
-    self.stream = stream.copy() if stream else {}
+    self.stream = stream
     self.is_new = stream is None and not is_clone
     self.is_clone = is_clone
-    self.original_url = stream.get('url', '') if is_clone else ''
-    self.original_name = stream.get('name', '') if is_clone else ''
+    self.original_url = stream.url if is_clone and stream else ''
+    self.original_name = stream.name if is_clone and stream else ''
     self._init_ui()
     self._check_clipboard_for_url()
     self._load_stream_data()
     self._connect_signals()
 
   def _init_ui(self) -> None:
-    self.setWindowFlag(Qt.WindowType.WindowMinimizeButtonHint, False) ## working in Linux
-    self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False) ## working in Linux
-    self.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)    ## working in Linux
+    self.setWindowFlag(Qt.WindowType.WindowMinimizeButtonHint, False) ## not working in Linux
+    self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False) ## not working in Linux
+    self.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)    ## not working in Linux
     self.setMinimumSize(600, 290)
     self.setWindowTitle(f"{ 'Clone' if self.is_clone else 'Add' if self.is_new else 'Edit' } Stream")
     layout = QVBoxLayout()
@@ -205,14 +195,14 @@ class StreamDialog(QDialog):
   def _load_stream_data(self) -> None:
     if not self.stream:
       return
-    self.text_url.setText(self.stream.get('url', ''))
-    self.text_type.setText(self.stream.get('type', ''))
-    self.text_name.setText(self.stream.get('name', ''))
-    self.check_notify.setCheckState(_optionalBoolToCheckState(self.stream.get('notify')))
-    self.text_quality.setText(self.stream.get('quality', ''))
-    self.text_player.setText(self.stream.get('player', ''))
-    self.text_sl_args.setPlainText(self.stream.get('sl_args', ''))
-    self.text_mp_args.setPlainText(self.stream.get('mp_args', ''))
+    self.text_url.setText(str(self.stream.url))
+    self.text_type.setText(self.stream.type)
+    self.text_name.setText(self.stream.name)
+    self.check_notify.setCheckState(_optionalBoolToCheckState(self.stream.notify))
+    self.text_quality.setText(self.stream.quality)
+    self.text_player.setText(self.stream.player)
+    self.text_sl_args.setPlainText(self.stream.sl_args)
+    self.text_mp_args.setPlainText(self.stream.mp_args)
     self._update_preview()
 
   def _connect_signals(self) -> None:
@@ -258,23 +248,22 @@ class StreamDialog(QDialog):
         stream_type = sls_info[0]  ## The plugin name
         self.text_type.setText(stream_type)
         self._update_preview()
-        self.favicons.fetch_favicon(url, stream_type)
+        get_favicon(self.get_stream(), size=16)  ## Preload favicon
       except Exception as e:
         self._toggle_save_state(False)
         raise e
 
   def _update_preview(self) -> None:
     url = self.text_url.text().strip()
-    command = None if url == '' else self.launcher.format_command_display({
-      'url': url,
-      'name': self.text_name.text().strip(),
-      'type': self.text_type.text().strip(),
-      'quality': self.text_quality.text().strip(),
-      'player': self.text_player.text().strip(),
-      'sl_args': self.text_sl_args.toPlainText().strip(),
-      'mp_args': self.text_mp_args.toPlainText().strip()
-    })
-    self.text_preview.setPlainText(command)
+    if url == '':
+      self.text_preview.clear()
+      return
+    is_windows = platform.system() == 'Windows'
+    continuation = '^' if is_windows else '\\'
+    command = build_sl_command(self.cfg, self.get_stream())
+    lines = [command.pop(0)]  # Start with the program name
+    lines.extend([f'  {c}' for c in command])  # Indent the rest
+    self.text_preview.setPlainText(f' {continuation}\n'.join(lines))
 
   def _update_notify_descr(self) -> None:
     if self.check_notify.checkState() == Qt.CheckState.PartiallyChecked:
@@ -282,17 +271,17 @@ class StreamDialog(QDialog):
     else:
       self.check_notify.setText("Yes" if self.check_notify.checkState() == Qt.CheckState.Checked else "No")
 
-  def get_stream(self) -> dict:
-    return {
-      'url': self.text_url.text().strip(),
-      'name': self.text_name.text().strip() or self.text_url.text().strip(),
-      'type': self.text_type.text().strip(),
-      'quality': self.text_quality.text().strip(),
-      'player': self.text_player.text().strip(),
-      'sl_args': self.text_sl_args.toPlainText().strip(),
-      'mp_args': self.text_mp_args.toPlainText().strip(),
-      'notify': _checkStateToOptionalBool(self.check_notify.checkState())
-    }
+  def get_stream(self) -> Stream:
+    return Stream(
+      url=self.text_url.text().strip(),
+      name=self.text_name.text().strip() or self.text_url.text().strip(),
+      type=self.text_type.text().strip(),
+      quality=self.text_quality.text().strip(),
+      player=self.text_player.text().strip(),
+      sl_args=self.text_sl_args.toPlainText().strip(),
+      mp_args=self.text_mp_args.toPlainText().strip(),
+      notify=_checkStateToOptionalBool(self.check_notify.checkState())
+    )
 
 
 def _checkStateToOptionalBool(state: Qt.CheckState) -> bool | None:

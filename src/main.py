@@ -2,6 +2,7 @@
 """
 StreamCondor - A system tray application for monitoring livestreams.
 """
+import os
 import sys
 import argparse
 import logging
@@ -12,10 +13,14 @@ from streamlink.exceptions import StreamlinkError, NoPluginError
 
 from ui.trayicon import TrayIcon
 
+
 log = logging.getLogger(__name__)
+
+os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.services=false')
 
 
 def setup_logging(log_level: str) -> None:
+  """Configure logging based on specified level."""
   numeric_level = getattr(logging, log_level.upper(), logging.INFO)
   logging.basicConfig(
     level=numeric_level,
@@ -36,6 +41,7 @@ def excepthook(exc_type, exc_value, exc_tb):
 
 
 def parse_arguments() -> argparse.Namespace:
+  """Parse command-line arguments."""
   parser = argparse.ArgumentParser(
     description='StreamCondor - Monitor livestreams from system tray'
   )
@@ -53,7 +59,8 @@ def parse_arguments() -> argparse.Namespace:
   return parser.parse_args()
 
 
-if __name__ == '__main__':
+def main() -> int:
+  """Main application entry point."""
   args = parse_arguments()
   setup_logging(args.log_level)
   log.info('Starting StreamCondor...')
@@ -74,4 +81,8 @@ if __name__ == '__main__':
   tray_icon = TrayIcon(app, config_path)
   tray_icon.show()
   log.info('StreamCondor started successfully')
-  sys.exit(app.exec())
+  return app.exec()
+
+
+if __name__ == '__main__':
+  sys.exit(main())

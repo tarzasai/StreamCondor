@@ -3,24 +3,23 @@ Stream monitoring thread for StreamCondor.
 """
 import logging
 import time
-from typing import Any
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from configuration import Configuration
-from sluser import sls
+from model import Configuration, Stream
+from slhelper import sls
 
 log = logging.getLogger(__name__)
 
 
 class StreamMonitor(QThread):
-  stream_online = pyqtSignal(dict)  # Emitted when a stream comes online
-  stream_offline = pyqtSignal(dict)  # Emitted when a stream goes offline
+  stream_online = pyqtSignal(Stream)
+  stream_offline = pyqtSignal(Stream)
 
   def __init__(self, configuration: Configuration):
     super().__init__()
-    self.configuration = configuration
+    self.cfg = configuration
     self.running = True
-    self.paused = not self.configuration.autostart_monitoring
+    self.paused = not self.cfg.autostart_monitoring
     self.stream_status: dict[str, bool] = {}
     self.last_check_time: dict[str, float] = {}
 
@@ -33,15 +32,12 @@ class StreamMonitor(QThread):
   def _check_streams(self) -> None:
     # Filter enabled streams that need checking
     streams_to_check = []
-    for stream in self.configuration.streams:
-      url = stream.get('url', '')
-      if not url:
-        continue
+    for url in self.cfg.streams:
       last_check = self.last_check_time.get(url, 0)
       time_since_check = time.time() - last_check
       # Check if never checked or check_interval has elapsed
-      if last_check == 0 or time_since_check >= self.configuration.check_interval:
-        streams_to_check.append((url, last_check, stream))
+      if last_check == 0 or time_since_check >= self.cfg.check_interval:
+        streams_to_check.append((url, last_check, self.cfg.streams[url]))
     # Sort by last check time (oldest first, never checked go first)
     streams_to_check.sort(key=lambda x: x[1])
     # Check only the first stream that's due
@@ -50,7 +46,7 @@ class StreamMonitor(QThread):
       self._check_single_stream(url, stream)
       self.last_check_time[url] = time.time()
 
-  def _check_single_stream(self, url: str, stream: dict) -> None:
+  def _check_single_stream(self, url: str, stream: Stream) -> None:
     try:
       is_online = bool(sls.streams(url))
     except Exception as e:
@@ -59,10 +55,10 @@ class StreamMonitor(QThread):
     previous_status = self.stream_status.get(url, False)
     # Detect status changes
     if is_online and not previous_status:
-      log.info(f'Stream online: {stream.get("name", url)}')
+      log.info(f'Stream online: {stream.name}')
       self.stream_online.emit(stream)
     elif not is_online and previous_status:
-      log.info(f'Stream offline: {stream.get("name", url)}')
+      log.info(f'Stream offline: {stream.name}')
       self.stream_offline.emit(stream)
     self.stream_status[url] = is_online
 
@@ -75,10 +71,6 @@ class StreamMonitor(QThread):
   def resume(self) -> None:
     self.paused = False
 
-  def get_online_streams(self) -> list[dict[str, Any]]:
-    streams = self.configuration.streams
-    online = []
-    for stream in streams:
-      if self.stream_status.get(stream.get('url'), False):
-        online.append(stream)
-    return sorted(online, key=lambda s: (s.get('type', ''), s.get('name', s.get('url', ''))))
+  def get_online_streams(self) -> list[Stream]:
+    online = [stream for stream in self.cfg.streams.values() if self.stream_status.get(stream.url, False)]
+    return sorted(online, key=lambda s: (s.type or '', s.name or s.url or ''))

@@ -140,7 +140,6 @@ Each stream supports the following options:
   "type": "twitch",
   "quality": "best",
   "player": "mpv",
-  "check": true,
   "notify": true,
   "sl_args": "--retry-max 5",
   "mp_args": "--no-border --no-osc"
@@ -156,14 +155,13 @@ Each stream supports the following options:
 | `type` | string | Platform type (auto-detected) | - |
 | `quality` | string | Stream quality (best, 720p, etc.) | `best` |
 | `player` | string | Media player executable | global default |
-| `check` | bool/null | Enable monitoring for this stream | `true` |
 | `notify` | bool/null | Enable notifications for this stream | global default |
 | `sl_args` | string | Custom streamlink arguments | global default |
 | `mp_args` | string | Custom player arguments | global default |
 
 #### Tristate Options
 
-Fields `check` and `notify` support three states:
+The `notify` field supports three states:
 - `true` - Explicitly enabled
 - `false` - Explicitly disabled
 - `null` (omit field) - Use global default
