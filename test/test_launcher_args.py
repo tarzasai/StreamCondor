@@ -1,5 +1,5 @@
 import unittest
-from slhelper import _parse_args_string, _split_args_with_values, _merge_args_strings
+from streamcondor.slhelper import _parse_args_string, _split_args_with_values, _merge_args_strings
 
 
 class TestLauncherArgHelpers(unittest.TestCase):

@@ -10,7 +10,7 @@ from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from streamlink.exceptions import StreamlinkError, NoPluginError
 
-from ui.trayicon import TrayIcon
+from streamcondor.ui.trayicon import TrayIcon
 
 log = logging.getLogger(__name__)
 

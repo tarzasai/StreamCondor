@@ -7,9 +7,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection
 from PyQt6.QtGui import QIcon, QFont
 
-from model import Configuration, Stream, TrayIconColor, TrayIconAction
-from favicons import get_favicon
-from ui.stream import StreamDialog
+from streamcondor.model import Configuration, Stream, TrayIconColor, TrayIconAction
+from streamcondor.favicons import get_favicon
+from streamcondor.ui.stream import StreamDialog
 
 log = logging.getLogger(__name__)
 

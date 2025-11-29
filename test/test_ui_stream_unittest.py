@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QApplication, QDialogButtonBox
 from PyQt6.QtTest import QTest
 from PyQt6.QtCore import Qt
 
-from model import Stream
+from streamcondor.model import Stream
 
 
 class TestUIStreamDialog(unittest.TestCase):
@@ -21,10 +21,10 @@ class TestUIStreamDialog(unittest.TestCase):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
         json.dump({'streams': {}, 'check_interval': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}, tmp)
         tmp.flush(); tmp.close()
-        from model import Configuration
+        from streamcondor.model import Configuration
         cfg = Configuration(Path(tmp.name))
         s = Stream(url='https://un.example/', name='U', type='u', quality='best', notify=True)
-        from ui.stream import StreamDialog
+        from streamcondor.ui.stream import StreamDialog
         dlg = StreamDialog(None, cfg, stream=s)
         # ensure fields populated
         self.assertEqual(dlg.text_url.text(), s.url)

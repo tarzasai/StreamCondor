@@ -23,12 +23,13 @@ setup(
   long_description_content_type='text/markdown',
   author='StreamCondor Contributors',
   url='https://github.com/yourusername/streamcondor',
-  packages=find_packages(),
+  packages=find_packages('src'),
+  package_dir={'': 'src'},
   install_requires=requirements,
   python_requires='>=3.12',
   entry_points={
     'console_scripts': [
-      'streamcondor=src.main:main',
+      'streamcondor=streamcondor.main:main',
     ],
   },
   classifiers=[
@@ -41,6 +42,6 @@ setup(
   ],
   include_package_data=True,
   package_data={
-    'src': ['assets/*.png', 'assets/*.svg'],
+    'streamcondor': ['assets/*.png', 'assets/*.svg'],
   },
 )

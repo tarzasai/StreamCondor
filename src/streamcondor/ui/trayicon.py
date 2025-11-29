@@ -6,12 +6,12 @@ from PyQt6.QtGui import QIcon, QAction
 from PyQt6.QtCore import QStandardPaths
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
-from model import Configuration, TrayIconColor, TrayIconStatus, TrayIconAction, Stream
-from monitor import StreamMonitor
-from favicons import get_favicon
-from slhelper import sls, launch_process, build_sl_command
-from resources import get_asset_path
-from ui.settings import SettingsWindow
+from streamcondor.model import Configuration, TrayIconColor, TrayIconStatus, TrayIconAction, Stream
+from streamcondor.monitor import StreamMonitor
+from streamcondor.favicons import get_favicon
+from streamcondor.slhelper import sls, launch_process, build_sl_command
+from streamcondor.resources import get_asset_path
+from streamcondor.ui.settings import SettingsWindow
 
 log = logging.getLogger(__name__)
 
@@ -206,4 +206,3 @@ def _check_url(url: str) -> str:
     return url
   except ValidationError:
     return None
-

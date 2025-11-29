@@ -1,7 +1,7 @@
 import unittest
 import json
 from pathlib import Path
-from model import Configuration, Stream, TrayIconColor, TrayIconAction
+from streamcondor.model import Configuration, Stream, TrayIconColor, TrayIconAction
 
 class TestConfigurationMore(unittest.TestCase):
     def test_setters_and_persistence(self):

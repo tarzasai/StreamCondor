@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch, MagicMock
 import time
 
-from model import Configuration, Stream
-from monitor import StreamMonitor
+from streamcondor.model import Configuration, Stream
+from streamcondor.monitor import StreamMonitor
 
 
 class TestMonitor(unittest.TestCase):
@@ -29,7 +29,7 @@ class TestMonitor(unittest.TestCase):
         self.cfg = Configuration(self.tmpfile)
         self.monitor = StreamMonitor(self.cfg)
 
-    @patch('monitor.sls')
+    @patch('streamcondor.monitor.sls')
     def test_check_single_stream_online_emits(self, mock_sls):
         # Simulate sls.streams returning a non-empty list
         mock_sls.streams.return_value = ['stream1']
@@ -39,7 +39,7 @@ class TestMonitor(unittest.TestCase):
         self.assertEqual(len(emitted), 1)
         self.assertEqual(emitted[0][0], 'online')
 
-    @patch('monitor.sls')
+    @patch('streamcondor.monitor.sls')
     def test_check_single_stream_offline_emits(self, mock_sls):
         # First set previous status to True, then simulate offline
         self.monitor.stream_status['https://a.example/'] = True
@@ -50,7 +50,7 @@ class TestMonitor(unittest.TestCase):
         self.assertEqual(len(emitted), 1)
         self.assertEqual(emitted[0][0], 'offline')
 
-    @patch('monitor.sls')
+    @patch('streamcondor.monitor.sls')
     def test_check_streams_respects_interval_and_selects_oldest(self, mock_sls):
         # Make both streams appear online, call _check_streams twice with interval
         mock_sls.streams.return_value = ['s']
@@ -81,7 +81,7 @@ class TestMonitor(unittest.TestCase):
         }
         json.dump(cfg, tmp)
         tmp.flush(); tmp.close()
-        from model import Configuration
+        from streamcondor.model import Configuration
         cfgobj = Configuration(Path(tmp.name))
         mon = StreamMonitor(cfgobj)
         # No streams online initially
@@ -99,7 +99,7 @@ class TestMonitor(unittest.TestCase):
         mon.stop()
         self.assertFalse(mon.running)
 
-    @patch('monitor.sls')
+    @patch('streamcondor.monitor.sls')
     def test_run_loop_and_exception_handling(self, mock_sls):
         # Patch msleep to avoid sleeping, and simulate an exception from sls
         import tempfile, json
@@ -114,7 +114,7 @@ class TestMonitor(unittest.TestCase):
         }
         json.dump(cfg, tmp)
         tmp.flush(); tmp.close()
-        from model import Configuration
+        from streamcondor.model import Configuration
         cfgobj = Configuration(Path(tmp.name))
         mon = StreamMonitor(cfgobj)
         # Force sls.streams to raise

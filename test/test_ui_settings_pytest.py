@@ -21,8 +21,8 @@ def write_tmp_config(tmp_path):
 
 
 def test_settings_toggle_notify_changes_icon(app, tmp_path):
-    from model import Configuration
-    from ui.settings import SettingsWindow
+    from streamcondor.model import Configuration
+    from streamcondor.ui.settings import SettingsWindow
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     win = SettingsWindow(cfg)
@@ -36,7 +36,7 @@ import pytest
 import tempfile
 import json
 from pathlib import Path
-from model import Stream
+from streamcondor.model import Stream
 
 from PyQt6.QtCore import Qt
 
@@ -52,13 +52,13 @@ def _make_cfg(tmp_path):
         'autostart_monitoring': False,
         'windows': {'settings_window': {'x': 100, 'y': 100, 'width': 700, 'height': 600}}
     }))
-    from model import Configuration
+    from streamcondor.model import Configuration
     return Configuration(Path(tmp))
 
 
 def test_settings_load_and_toggle_stream_notify(qtbot, tmp_path, monkeypatch):
     cfg = _make_cfg(tmp_path)
-    from ui.settings import SettingsWindow
+    from streamcondor.ui.settings import SettingsWindow
     win = SettingsWindow(cfg)
     qtbot.addWidget(win)
     win.show()

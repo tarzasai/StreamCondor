@@ -21,12 +21,12 @@ def write_tmp_config(tmp_path):
 
 
 def test_stream_preview_updates(app, tmp_path):
-    from model import Configuration
-    from ui.stream import StreamDialog
+    from streamcondor.model import Configuration
+    from streamcondor.ui.stream import StreamDialog
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     # patch sls.resolve_url so dialog creation and updates won't call real Streamlink
-    with patch('ui.stream.sls') as mock_sls:
+    with patch('streamcondor.ui.stream.sls') as mock_sls:
         mock_sls.resolve_url.return_value = ('youtube',)
         # create dialog and fill fields while patched
         dlg = StreamDialog(None, cfg)
@@ -40,9 +40,7 @@ def test_stream_preview_updates(app, tmp_path):
     preview = dlg.text_preview.toPlainText()
     assert 'streamlink' in preview
     assert 'https://example.com/video' in preview
-import pytest
-from model import Stream
-from ui.stream import StreamDialog
+from streamcondor.model import Stream
 
 
 def test_stream_dialog_load_and_get_stream(qtbot):
@@ -54,7 +52,8 @@ def test_stream_dialog_load_and_get_stream(qtbot):
     tmp = tempfile.NamedTemporaryFile('w+', delete=False)
     json.dump({'streams': {}, 'check_interval': 1, 'autostart_monitoring': False}, tmp)
     tmp.flush(); tmp.close()
-    from model import Configuration
+    from streamcondor.model import Configuration
+    from streamcondor.ui.stream import StreamDialog
     cfg = Configuration(Path(tmp.name))
     dlg = StreamDialog(None, cfg, stream=s)
     qtbot.addWidget(dlg)

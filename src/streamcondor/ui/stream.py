@@ -7,9 +7,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QIcon
 
-from model import Configuration, Stream
-from favicons import get_favicon
-from slhelper import sls, build_sl_command
+from streamcondor.model import Configuration, Stream
+from streamcondor.favicons import get_favicon
+from streamcondor.slhelper import sls, build_sl_command
 
 SL_ARGS_HINT = '''
 <html><head/><body>

@@ -2,8 +2,8 @@ import unittest
 import subprocess
 from unittest.mock import patch, MagicMock
 from pathlib import Path
-from model import Configuration, Stream
-import slhelper
+from streamcondor.model import Configuration, Stream
+import streamcondor.slhelper as slhelper
 
 class DummyCfg:
     def __init__(self):
@@ -21,14 +21,14 @@ class TestSlHelper(unittest.TestCase):
         self.assertEqual(cmd[0], 'streamlink')
         self.assertIn('https://example.com/stream', cmd)
 
-    @patch('slhelper.subprocess.Popen')
+    @patch('streamcondor.slhelper.subprocess.Popen')
     def test_launch_process_success(self, mock_popen):
         mock_popen.return_value = MagicMock()
         ok = slhelper.launch_process(['echo', 'hi'])
         self.assertTrue(ok)
         mock_popen.assert_called()
 
-    @patch('slhelper.subprocess.Popen', side_effect=Exception('boom'))
+    @patch('streamcondor.slhelper.subprocess.Popen', side_effect=Exception('boom'))
     def test_launch_process_failure(self, mock_popen):
         ok = slhelper.launch_process('bad command')
         self.assertFalse(ok)

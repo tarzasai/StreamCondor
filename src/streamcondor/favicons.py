@@ -8,7 +8,7 @@ from PyQt6.QtGui import QPixmap, QImage
 from PyQt6.QtCore import QStandardPaths
 from PIL import Image
 
-from model import Stream
+from streamcondor.model import Stream
 
 log = logging.getLogger(__name__)
 

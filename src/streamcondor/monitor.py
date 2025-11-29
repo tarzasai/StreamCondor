@@ -5,8 +5,8 @@ import logging
 import time
 from PyQt6.QtCore import QThread, pyqtSignal
 
-from model import Configuration, Stream
-from slhelper import sls
+from streamcondor.model import Configuration, Stream
+from streamcondor.slhelper import sls
 
 log = logging.getLogger(__name__)
 

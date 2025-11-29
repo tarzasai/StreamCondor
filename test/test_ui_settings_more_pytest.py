@@ -21,8 +21,8 @@ def write_tmp_config(tmp_path):
 
 
 def test_streamlistmodel_checkstate_toggle(app, tmp_path):
-    from model import Configuration, Stream
-    from ui.settings import StreamListModel
+    from streamcondor.model import Configuration, Stream
+    from streamcondor.ui.settings import StreamListModel
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     # add a stream
@@ -52,15 +52,15 @@ def test_streamlistmodel_checkstate_toggle(app, tmp_path):
 
 
 def test_add_edit_clone_delete_flows(app, tmp_path):
-    from model import Configuration, Stream
-    from ui.settings import SettingsWindow
+    from streamcondor.model import Configuration, Stream
+    from streamcondor.ui.settings import SettingsWindow
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     win = SettingsWindow(cfg)
 
     # Mock StreamDialog to simulate user adding a stream
     fake_stream = Stream(url='https://add', name='Add', type='youtube')
-    with patch('ui.settings.StreamDialog') as mock_dialog:
+    with patch('streamcondor.ui.settings.StreamDialog') as mock_dialog:
         dlg = mock_dialog.return_value
         dlg.exec.return_value = True
         dlg.get_stream.return_value = fake_stream
@@ -81,7 +81,7 @@ def test_add_edit_clone_delete_flows(app, tmp_path):
             break
     assert stream_idx is not None
     win.stream_list.setCurrentIndex(stream_idx)
-    with patch('ui.settings.StreamDialog') as mock_dialog2:
+    with patch('streamcondor.ui.settings.StreamDialog') as mock_dialog2:
         dlg2 = mock_dialog2.return_value
         dlg2.exec.return_value = True
         updated = Stream(url='https://add', name='AddEdit', type='youtube')
@@ -92,7 +92,7 @@ def test_add_edit_clone_delete_flows(app, tmp_path):
     # Clone the stream: select the same child index
     # find the same stream index for cloning
     win.stream_list.setCurrentIndex(stream_idx)
-    with patch('ui.settings.StreamDialog') as mock_dialog3:
+    with patch('streamcondor.ui.settings.StreamDialog') as mock_dialog3:
         dlg3 = mock_dialog3.return_value
         dlg3.exec.return_value = True
         cloned = Stream(url='https://clone', name='Clone', type='youtube')
@@ -102,7 +102,7 @@ def test_add_edit_clone_delete_flows(app, tmp_path):
 
     # Delete the original (simulate Yes for QMessageBox)
     win.stream_list.setCurrentIndex(stream_idx)
-    with patch('ui.settings.QMessageBox.question', return_value=1):
+    with patch('streamcondor.ui.settings.QMessageBox.question', return_value=1):
         win._delete_stream()
     # Deleting will remove one stream (the currently selected). Ensure config still valid
     assert isinstance(cfg.streams, dict)
@@ -111,8 +111,8 @@ def test_add_edit_clone_delete_flows(app, tmp_path):
 
 
 def test_geometry_save_and_restore(app, tmp_path):
-    from model import Configuration
-    from ui.settings import SettingsWindow
+    from streamcondor.model import Configuration
+    from streamcondor.ui.settings import SettingsWindow
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     win = SettingsWindow(cfg)

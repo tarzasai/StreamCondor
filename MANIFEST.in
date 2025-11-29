@@ -1,5 +1,6 @@
 # Include assets in the package distribution
 recursive-include src/assets *.png *.svg *.ico
+recursive-include src/streamcondor/assets *.png *.svg *.ico
 
 # Include documentation
 include README.md

@@ -5,8 +5,8 @@ from PIL import Image
 from pathlib import Path
 import requests
 
-from favicons import _Favicons, get_favicon, favicons
-from model import Stream
+from streamcondor.favicons import _Favicons, get_favicon, favicons
+from streamcondor.model import Stream
 
 
 def _create_png_bytes(size=(32, 32), color=(255, 0, 0, 255)):
@@ -27,7 +27,7 @@ class TestFavicons(unittest.TestCase):
         except Exception:
             cls._app = None
 
-    @patch('favicons.requests.get')
+    @patch('streamcondor.favicons.requests.get')
     def test_discover_and_download(self, mock_get):
         # Mock HTML response for discovery
         html = '<html><head><link rel="icon" href="/favicon.png"></head><body></body></html>'
@@ -45,7 +45,7 @@ class TestFavicons(unittest.TestCase):
         pix = f.get_favicon(s.url, s.type, 16)
         self.assertIsNotNone(pix)
 
-    @patch('favicons.requests.get')
+    @patch('streamcondor.favicons.requests.get')
     def test_download_too_small(self, mock_get):
         resp_img = MagicMock()
         resp_img.content = _create_png_bytes((8, 8))
@@ -55,8 +55,8 @@ class TestFavicons(unittest.TestCase):
         ok = f._download_and_save_favicon('https://example.com/small.png', 'smalltest')
         self.assertFalse(ok)
 
-    @patch('favicons.requests.get')
-    @patch('favicons.QStandardPaths.writableLocation')
+    @patch('streamcondor.favicons.requests.get')
+    @patch('streamcondor.favicons.QStandardPaths.writableLocation')
     def test_ico_multiframe_and_cache(self, mock_writable, mock_get):
         # Create a temporary cache dir
         import tempfile
@@ -87,8 +87,8 @@ class TestFavicons(unittest.TestCase):
         self.assertIsNotNone(pix2)
         mock_get.assert_not_called()
 
-    @patch('favicons.requests.get')
-    @patch('favicons.QStandardPaths.writableLocation')
+    @patch('streamcondor.favicons.requests.get')
+    @patch('streamcondor.favicons.QStandardPaths.writableLocation')
     def test_discover_rel_variants(self, mock_writable, mock_get):
         tmp = __import__('tempfile').TemporaryDirectory()
         mock_writable.return_value = tmp.name
@@ -112,8 +112,8 @@ class TestFavicons(unittest.TestCase):
         pix = f.get_favicon(s.url, s.type, 16)
         self.assertIsNotNone(pix)
 
-    @patch('favicons.requests.get')
-    @patch('favicons.QStandardPaths.writableLocation')
+    @patch('streamcondor.favicons.requests.get')
+    @patch('streamcondor.favicons.QStandardPaths.writableLocation')
     def test_meta_fallback(self, mock_writable, mock_get):
         tmp = __import__('tempfile').TemporaryDirectory()
         mock_writable.return_value = tmp.name
@@ -136,8 +136,8 @@ class TestFavicons(unittest.TestCase):
         pix = f.get_favicon(s.url, s.type, 16)
         self.assertIsNotNone(pix)
 
-    @patch('favicons.requests.get')
-    @patch('favicons.QStandardPaths.writableLocation')
+    @patch('streamcondor.favicons.requests.get')
+    @patch('streamcondor.favicons.QStandardPaths.writableLocation')
     def test_root_and_common_paths(self, mock_writable, mock_get):
         tmp = __import__('tempfile').TemporaryDirectory()
         mock_writable.return_value = tmp.name
@@ -154,7 +154,7 @@ class TestFavicons(unittest.TestCase):
         pix = f.get_favicon(s.url, s.type, 16)
         self.assertIsNotNone(pix)
 
-    @patch('favicons.requests.get')
+    @patch('streamcondor.favicons.requests.get')
     def test_invalid_image_bytes(self, mock_get):
         resp_img = MagicMock()
         resp_img.content = b'not an image'
@@ -165,8 +165,8 @@ class TestFavicons(unittest.TestCase):
         ok = f._download_and_save_favicon('https://example.com/invalid', 'badimg')
         self.assertFalse(ok)
 
-    @patch('favicons.requests.get')
-    @patch('favicons.QStandardPaths.writableLocation')
+    @patch('streamcondor.favicons.requests.get')
+    @patch('streamcondor.favicons.QStandardPaths.writableLocation')
     def test_all_downloads_fail(self, mock_writable, mock_get):
         tmp = __import__('tempfile').TemporaryDirectory()
         mock_writable.return_value = tmp.name

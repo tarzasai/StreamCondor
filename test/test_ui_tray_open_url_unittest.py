@@ -13,21 +13,21 @@ class TestTrayOpenUrl(unittest.TestCase):
         cls._app = QApplication.instance() or QApplication([])
 
     def test_check_url_helper(self):
-        from ui.trayicon import _check_url
+        from streamcondor.ui.trayicon import _check_url
         self.assertEqual(_check_url('https://example.com'), 'https://example.com')
         self.assertIsNone(_check_url('not-a-url'))
 
-    @patch('ui.trayicon.build_sl_command')
-    @patch('ui.trayicon.launch_process')
-    @patch('ui.trayicon.sls')
-    @patch('ui.trayicon.pyperclip')
+    @patch('streamcondor.ui.trayicon.build_sl_command')
+    @patch('streamcondor.ui.trayicon.launch_process')
+    @patch('streamcondor.ui.trayicon.sls')
+    @patch('streamcondor.ui.trayicon.pyperclip')
     def test_open_url_uses_clipboard_and_launches(self, mock_clip, mock_sls, mock_launch, mock_build):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
         tmp.write(json.dumps({'streams': {}, 'check_interval': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
         tmp.flush(); tmp.close()
-        from model import Configuration
+        from streamcondor.model import Configuration
         cfg = Configuration(Path(tmp.name))
-        from ui.trayicon import TrayIcon
+        from streamcondor.ui.trayicon import TrayIcon
         # prepare mocks
         mock_clip.paste.return_value = 'https://x'
         mock_sls.resolve_url.return_value = ('youtube',)

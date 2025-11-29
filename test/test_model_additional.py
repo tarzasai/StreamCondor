@@ -1,5 +1,5 @@
 import unittest
-from model import TrayIconColor, TrayIconAction, Geometry, Stream
+from streamcondor.model import TrayIconColor, TrayIconAction, Geometry, Stream
 
 
 class TestModelAdditional(unittest.TestCase):

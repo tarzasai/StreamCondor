@@ -6,7 +6,7 @@ import shlex
 import subprocess
 from streamlink import Streamlink
 
-from model import Configuration, Stream
+from streamcondor.model import Configuration, Stream
 
 log = logging.getLogger(__name__)
 

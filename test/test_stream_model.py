@@ -1,5 +1,5 @@
 import unittest
-from model import Stream
+from streamcondor.model import Stream
 
 
 class TestStreamModel(unittest.TestCase):

@@ -23,8 +23,8 @@ def write_tmp_config(tmp_path):
 
 
 def test_update_icon_states(app, tmp_path):
-    from model import Configuration, Stream
-    from ui.trayicon import TrayIcon
+    from streamcondor.model import Configuration, Stream
+    from streamcondor.ui.trayicon import TrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     ti = TrayIcon(None, str(cfg.config_path))
@@ -57,11 +57,11 @@ def test_update_icon_states(app, tmp_path):
 
 
 def test_update_menu_with_favicons(app, tmp_path):
-    from model import Configuration, Stream
-    from ui.trayicon import TrayIcon
+    from streamcondor.model import Configuration, Stream
+    from streamcondor.ui.trayicon import TrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
-    with patch('ui.trayicon.get_favicon') as mock_fav:
+    with patch('streamcondor.ui.trayicon.get_favicon') as mock_fav:
         # return a small pixmap
         pix = QPixmap(16, 16)
         pix.fill()
@@ -79,8 +79,8 @@ def test_update_menu_with_favicons(app, tmp_path):
 
 
 def test_on_tray_icon_action_calls_methods(app, tmp_path):
-    from model import Configuration
-    from ui.trayicon import TrayIcon, TrayIconAction
+    from streamcondor.model import Configuration
+    from streamcondor.ui.trayicon import TrayIcon, TrayIconAction
     from PyQt6.QtWidgets import QSystemTrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
@@ -111,15 +111,15 @@ def test_on_tray_icon_action_calls_methods(app, tmp_path):
 
 
 def test_open_url_cancel_noop(app, tmp_path):
-    from model import Configuration
-    from ui.trayicon import TrayIcon
+    from streamcondor.model import Configuration
+    from streamcondor.ui.trayicon import TrayIcon
     from PyQt6.QtWidgets import QInputDialog
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     ti = TrayIcon(None, str(cfg.config_path))
     try:
-        with patch('ui.trayicon.pyperclip') as mock_clip, \
-             patch('ui.trayicon.QInputDialog.getText', return_value=('', False)):
+        with patch('streamcondor.ui.trayicon.pyperclip') as mock_clip, \
+                 patch('streamcondor.ui.trayicon.QInputDialog.getText', return_value=('', False)):
             mock_clip.paste.return_value = ''
             # should not raise
             ti._open_url()
@@ -128,8 +128,8 @@ def test_open_url_cancel_noop(app, tmp_path):
 
 
 def test_on_stream_online_shows_message(app, tmp_path):
-    from model import Configuration, Stream
-    from ui.trayicon import TrayIcon
+    from streamcondor.model import Configuration, Stream
+    from streamcondor.ui.trayicon import TrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     ti = TrayIcon(None, str(cfg.config_path))

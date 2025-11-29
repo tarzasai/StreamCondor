@@ -12,15 +12,15 @@ class TestUITray(unittest.TestCase):
     def setUpClass(cls):
         cls._app = QApplication.instance() or QApplication([])
 
-    @patch('ui.trayicon.get_favicon')
-    @patch('ui.trayicon.launch_process')
+    @patch('streamcondor.ui.trayicon.get_favicon')
+    @patch('streamcondor.ui.trayicon.launch_process')
     def test_tray_toggle_and_launch(self, mock_launch, mock_fav):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
         tmp.write(json.dumps({'streams': {}, 'check_interval': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
         tmp.flush(); tmp.close()
-        from model import Configuration
+        from streamcondor.model import Configuration
         cfg = Configuration(Path(tmp.name))
-        from ui.trayicon import TrayIcon
+        from streamcondor.ui.trayicon import TrayIcon
         ti = TrayIcon(None, str(cfg.config_path))
         # toggle notifications
         orig = ti.notify
