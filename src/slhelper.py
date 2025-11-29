@@ -11,7 +11,7 @@ from model import Configuration, Stream
 log = logging.getLogger(__name__)
 
 sls = Streamlink(
-  plugins_builtin=True
+  plugins_builtin=True,
 )
 
 # Determine the path where a user config and plugins would be located based on the OS

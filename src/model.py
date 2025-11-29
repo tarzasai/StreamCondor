@@ -32,11 +32,11 @@ class TrayIconAction(Enum):
   def display_name(self) -> str:
     """Get user-friendly display name for the action."""
     names = {
+      TrayIconAction.NOTHING: 'Do nothing',
+      TrayIconAction.OPEN_URL: 'Open stream from URL',
       TrayIconAction.OPEN_CONFIG: 'Open configuration',
-      TrayIconAction.OPEN_URL: 'Open URL dialog',
       TrayIconAction.TOGGLE_MONITORING: 'Toggle monitoring',
       TrayIconAction.TOGGLE_NOTIFICATIONS: 'Toggle notifications',
-      TrayIconAction.NOTHING: 'Nothing'
     }
     return names[self]
 
@@ -70,7 +70,7 @@ class ConfigModel(BaseModelWithEmptyToNone):
   autostart_monitoring: bool = Field(default=False, description="Whether monitoring starts automatically")
   check_interval: int = Field(default=60, description="Interval in seconds between stream checks")
   default_notify: bool = Field(default=False, description="Default notification setting for streams")
-  default_streamlink_args: str | None = Field(default="", description="Default Streamlink arguments")
+  default_streamlink_args: str | None = Field(default="--title \"{author} - {title}\"", description="Default Streamlink arguments")
   default_quality: str | None = Field(default="best", description="Default stream quality")
   default_media_player: str | None = Field(default="", description="Default media player command")
   default_media_player_args: str | None = Field(default="", description="Default media player arguments")

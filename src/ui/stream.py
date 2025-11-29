@@ -1,42 +1,37 @@
 import logging
 import platform
 from PyQt6.QtWidgets import (
-  QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit, QDialogButtonBox,
-  QCheckBox, QTextEdit, QPushButton, QGridLayout, QWidget, QApplication
+  QDialog, QVBoxLayout, QHBoxLayout, QTabWidget, QLabel, QLineEdit, QDialogButtonBox, QFormLayout,
+  QCheckBox, QTextEdit, QPushButton, QWidget, QApplication
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QFont
+from PyQt6.QtGui import QFont, QIcon
 
 from model import Configuration, Stream
 from favicons import get_favicon
 from slhelper import sls, build_sl_command
 
+SL_ARGS_HINT = '''
+<html><head/><body>
+  <a href="https://streamlink.github.io/cli.html#general-options">
+    <span style=" text-decoration: underline; color:#4285f4;">Streamlink command-line arguments</span>
+  </a>
+</body></html>
+'''
+MONOSPACE_FONT = QFont('monospace')
+MONOSPACE_FONT.setStyleHint(QFont.StyleHint.Monospace)
 
 log = logging.getLogger(__name__)
 
 
 class StreamDialog(QDialog):
 
-  def __init__(
-    self,
-    parent: QWidget,
-    configuration: Configuration,
-    stream: Stream | None = None,
-    is_clone: bool = False,
-  ):
-    """Initialize edit stream dialog.
-
-    Args:
-      parent: Parent widget
-      configuration: Configuration instance
-      stream: Stream configuration object to edit (None for new stream)
-      is_clone: Whether this is a clone of an existing stream
-    """
+  def __init__(self, parent: QWidget, cfg: Configuration, stream: Stream | None = None, is_clone: bool = False):
     super().__init__(parent)
-    self.cfg = configuration
+    self.cfg = cfg
     self.stream = stream
-    self.is_new = stream is None and not is_clone
     self.is_clone = is_clone
+    self.is_new = stream is None and not is_clone
     self.original_url = stream.url if is_clone and stream else ''
     self.original_name = stream.name if is_clone and stream else ''
     self._init_ui()
@@ -48,7 +43,7 @@ class StreamDialog(QDialog):
     self.setWindowFlag(Qt.WindowType.WindowMinimizeButtonHint, False) ## not working in Linux
     self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False) ## not working in Linux
     self.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)    ## not working in Linux
-    self.setMinimumSize(600, 290)
+    self.setMinimumSize(600, 320)
     self.setWindowTitle(f"{ 'Clone' if self.is_clone else 'Add' if self.is_new else 'Edit' } Stream")
     layout = QVBoxLayout()
     self.tabs = QTabWidget()
@@ -60,122 +55,89 @@ class StreamDialog(QDialog):
     self.tabs.addTab(self.tab_sl_args, 'Streamlink Arguments')
     self.tabs.addTab(self.tab_mp_args, 'Player Arguments')
     self.tabs.addTab(self.tab_preview, 'Launch Command')
+    self.tabs.currentChanged.connect(self._on_tab_changed)
     layout.addWidget(self.tabs)
+    bottom = QHBoxLayout()
+    self.sl_args_hint = QLabel(SL_ARGS_HINT)
+    self.sl_args_hint.setStyleSheet('color: gray; font-size: 10pt;')
+    self.sl_args_hint.setOpenExternalLinks(True)
+    self.sl_args_hint.setVisible(False)
+    bottom.addWidget(self.sl_args_hint)
     self.buttonBox = QDialogButtonBox(self)
     self.buttonBox.setOrientation(Qt.Orientation.Horizontal)
     self.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Ok)
-    layout.addWidget(self.buttonBox)
+    bottom.addWidget(self.buttonBox)
+    layout.addLayout(bottom)
     self.setLayout(layout)
     # Save is disabled for new streams until URL is valid, and for clones until URL or name changes
     self._toggle_save_state(not self.is_new and not self.is_clone)
 
   def _create_general_tab(self) -> QWidget:
-    widget = QWidget()
-    layout = QGridLayout()
-    row = 0
     # URL
-    layout.addWidget(QLabel('Stream URL:'), row, 0)
-    url_layout = QHBoxLayout()
     self.text_url = QLineEdit()
     self.text_url.setPlaceholderText('https://...')
-    url_layout.addWidget(self.text_url)
-    self.btn_refresh = QPushButton('🔄')
-    self.btn_refresh.setMaximumWidth(30)
+    self.btn_refresh = QPushButton()
+    self.btn_refresh.setIcon(QIcon.fromTheme("view-refresh"))
     self.btn_refresh.setToolTip('Re-evaluate stream URL')
     self.btn_refresh.clicked.connect(self._refresh_stream_info)
-    url_layout.addWidget(self.btn_refresh)
-    layout.addLayout(url_layout, row, 1)
-    row += 1
+    url_box = QHBoxLayout()
+    url_box.addWidget(self.text_url)
+    url_box.addWidget(self.btn_refresh)
     # Type (read-only)
-    layout.addWidget(QLabel('Stream type:'), row, 0)
     self.text_type = QLineEdit()
     self.text_type.setReadOnly(True)
     self.text_type.setPlaceholderText('Auto-detected from URL')
-    layout.addWidget(self.text_type, row, 1)
-    row += 1
     # Display name
-    layout.addWidget(QLabel('Display name:'), row, 0)
     self.text_name = QLineEdit()
     self.text_name.setPlaceholderText('Optional custom name')
-    layout.addWidget(self.text_name, row, 1)
-    row += 1
     # Media player
-    layout.addWidget(QLabel('Media player:'), row, 0)
     self.text_player = QLineEdit()
     self.text_player.setPlaceholderText('Leave blank for default')
-    layout.addWidget(self.text_player, row, 1)
-    row += 1
     # Preferred quality
-    layout.addWidget(QLabel('Preferred quality:'), row, 0)
     self.text_quality = QLineEdit()
     self.text_quality.setPlaceholderText('e.g., best, 720p (leave blank for default)')
-    layout.addWidget(self.text_quality, row, 1)
-    row += 1
     # Notify toggle
-    layout.addWidget(QLabel('Notify when live:'), row, 0)
     self.check_notify = QCheckBox()
     self.check_notify.stateChanged.connect(self._update_notify_descr)
     self.check_notify.setTristate(True)
     self.check_notify.setCheckState(Qt.CheckState.Checked)
-    layout.addWidget(self.check_notify, row, 1)
-    row += 1
-    # Add stretch at bottom
-    layout.setRowStretch(row, 1)
-    widget.setLayout(layout)
+    # Form
+    form_layout = QFormLayout()
+    form_layout.setVerticalSizeConstraint(QFormLayout.SizeConstraint.SetMinimumSize)
+    form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+    form_layout.addRow('Stream URL', url_box)
+    form_layout.addRow('Stream type', self.text_type)
+    form_layout.addRow('Display name', self.text_name)
+    form_layout.addRow('Media player', self.text_player)
+    form_layout.addRow('Preferred quality', self.text_quality)
+    form_layout.addRow('Notify when live', self.check_notify)
+    widget = QWidget()
+    widget.setLayout(form_layout)
     return widget
 
   def _create_sl_args_tab(self) -> QWidget:
-    widget = QWidget()
-    layout = QVBoxLayout()
-    # Text area
     self.text_sl_args = QTextEdit()
     self.text_sl_args.setPlaceholderText('Enter custom streamlink arguments...')
-    # Set monospace font
-    font = QFont('monospace')
-    font.setStyleHint(QFont.StyleHint.Monospace)
-    self.text_sl_args.setFont(font)
+    self.text_sl_args.setFont(MONOSPACE_FONT)
     self.text_sl_args.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
-    layout.addWidget(self.text_sl_args)
-    # Hint text
-    hint = QLabel('Hint: Add custom streamlink options here (e.g., --http-no-ssl-verify)')
-    hint.setStyleSheet('color: gray; font-size: 10pt;')
-    layout.addWidget(hint)
-    widget.setLayout(layout)
-    return widget
+    return self.text_sl_args
 
   def _create_mp_args_tab(self) -> QWidget:
-    widget = QWidget()
-    layout = QVBoxLayout()
-    # Text area
     self.text_mp_args = QTextEdit()
     self.text_mp_args.setPlaceholderText('Enter custom media player arguments...')
-    # Set monospace font
-    font = QFont('monospace')
-    font.setStyleHint(QFont.StyleHint.Monospace)
-    self.text_mp_args.setFont(font)
+    self.text_mp_args.setFont(MONOSPACE_FONT)
     self.text_mp_args.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
-    layout.addWidget(self.text_mp_args)
-    # Hint text
-    hint = QLabel('Hint: Add custom media player options here')
-    hint.setStyleSheet('color: gray; font-size: 10pt;')
-    layout.addWidget(hint)
-    widget.setLayout(layout)
-    return widget
+    return self.text_mp_args
 
   def _create_preview_tab(self) -> QWidget:
-    widget = QWidget()
-    layout = QVBoxLayout()
-    # Read-only text area
     self.text_preview = QTextEdit()
     self.text_preview.setReadOnly(True)
-    # Set monospace font
-    font = QFont('monospace')
-    font.setStyleHint(QFont.StyleHint.Monospace)
-    self.text_preview.setFont(font)
+    self.text_preview.setFont(MONOSPACE_FONT)
     self.text_preview.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-    layout.addWidget(self.text_preview)
-    widget.setLayout(layout)
-    return widget
+    return self.text_preview
+
+  def _on_tab_changed(self, index: int) -> None:
+    self.sl_args_hint.setVisible(self.tabs.widget(index) == self.tab_sl_args)
 
   def _toggle_save_state(self, enabled: bool) -> None:
     self.buttonBox.button(QDialogButtonBox.StandardButton.Ok).setEnabled(enabled)

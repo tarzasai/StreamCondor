@@ -1,7 +1,9 @@
 import logging
 import pyperclip
+from pathlib import Path
 from pydantic import HttpUrl, ValidationError
 from PyQt6.QtGui import QIcon, QAction
+from PyQt6.QtCore import QStandardPaths
 from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
 from model import Configuration, TrayIconColor, TrayIconStatus, TrayIconAction, Stream
@@ -11,29 +13,32 @@ from slhelper import sls, launch_process, build_sl_command
 from resources import get_asset_path
 from ui.settings import SettingsWindow
 
-
 log = logging.getLogger(__name__)
 
 
 class TrayIcon(QSystemTrayIcon):
-  """System tray icon with context menu and notifications."""
 
   def __init__(self, parent, config_path: str):
     super().__init__(parent)
+
+
+    if not config_path:
+      config_dir = Path(QStandardPaths.writableLocation(
+        QStandardPaths.StandardLocation.ConfigLocation
+      ))
+      config_path = config_dir / 'StreamCondor.json'
+
     self.cfg = Configuration(config_path)
-    self._load_icons()
-    self._create_menu()
-    self.notify = self.cfg.default_notify
-    self.monitor = StreamMonitor(self.cfg)
-    self.monitor.stream_online.connect(self._on_stream_online)
-    self.monitor.stream_offline.connect(self._on_stream_offline)
-    self.monitor.start()
-    self._update_icon()
+    self.cfg.config_changed.connect(self._update_icon)
     self.activated.connect(self._on_tray_icon_action)
     self.settings = SettingsWindow(self.cfg)
-    self.cfg.config_changed.connect(self._update_icon)
+    self.notify = self.cfg.default_notify
+    self._create_icons()
+    self._create_menu()
+    self._create_monitor()
+    self._update_icon()
 
-  def _load_icons(self) -> None:
+  def _create_icons(self) -> None:
     # Icons to emulate checkbox states in menu (with both icons and standard checkboxes the menu looks weird)
     self.icon_checked = QIcon.fromTheme('ok', QIcon.fromTheme('dialog-ok'))
     self.icon_unchecked = QIcon.fromTheme('emblem-none', QIcon.fromTheme('dialog-cancel'))
@@ -57,7 +62,7 @@ class TrayIcon(QSystemTrayIcon):
   def _create_menu(self) -> None:
     self.menu = QMenu()
     # Open URL action
-    self.action_open_url = QAction('Open URL', self.menu)
+    self.action_open_url = QAction(TrayIconAction.OPEN_URL.display_name, self.menu)
     self.action_open_url.triggered.connect(self._open_url)
     self.menu.addAction(self.action_open_url)
     # Separator before online streams
@@ -83,6 +88,12 @@ class TrayIcon(QSystemTrayIcon):
     # Finish
     self.menu.aboutToShow.connect(self._update_menu)
     self.setContextMenu(self.menu)
+
+  def _create_monitor(self) -> None:
+    self.monitor = StreamMonitor(self.cfg)
+    self.monitor.stream_online.connect(self._on_stream_online)
+    self.monitor.stream_offline.connect(self._on_stream_offline)
+    self.monitor.start()
 
   def _update_menu(self) -> None:
     # Update toggle icons
@@ -112,18 +123,12 @@ class TrayIcon(QSystemTrayIcon):
     has_lives = len(online_streams) > 0
     has_vips = any(s.notify == True for s in online_streams)
     # Update icon
-    if self.monitor.paused:
-      # Monitoring off
-      self.setIcon(self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF])
-    elif has_vips:
-      # Monitoring on, VIP streams live
-      self.setIcon(self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.VIPS])
-    elif has_lives:
-      # Monitoring on, streams live
-      self.setIcon(self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.LIVE])
-    else:
-      # Monitoring on, no streams live
-      self.setIcon(self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.IDLE])
+    self.setIcon(
+      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF] if self.monitor.paused else
+      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.VIPS] if has_vips else
+      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.LIVE] if has_lives else
+      self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.IDLE]
+    )
     # Update tooltip
     tooltip = ['StreamCondor']
     if self.monitor.paused:

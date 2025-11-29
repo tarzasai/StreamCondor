@@ -8,25 +8,23 @@ import argparse
 import logging
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QMessageBox
-from PyQt6.QtCore import QStandardPaths
 from streamlink.exceptions import StreamlinkError, NoPluginError
 
 from ui.trayicon import TrayIcon
-
 
 log = logging.getLogger(__name__)
 
 os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.services=false')
 
 
-def setup_logging(log_level: str) -> None:
-  """Configure logging based on specified level."""
-  numeric_level = getattr(logging, log_level.upper(), logging.INFO)
+def setup_logging(args) -> None:
   logging.basicConfig(
-    level=numeric_level,
+    level=getattr(logging, args.log_level.upper(), logging.INFO),
     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s'
   )
-
+  if args.denoise_logging:
+    logging.getLogger('urllib3').setLevel(logging.WARNING)
+    logging.getLogger('charset_normalizer').setLevel(logging.WARNING)
 
 def excepthook(exc_type, exc_value, exc_tb):
   log.critical(f"Uncaught exception {exc_type}", exc_info=(exc_type, exc_value, exc_tb))
@@ -38,7 +36,6 @@ def excepthook(exc_type, exc_value, exc_tb):
   else:
     msg = f"Error '{exc_value or exc_type}'"
   QMessageBox.critical(None, "StreamCondor Error", msg)
-
 
 def parse_arguments() -> argparse.Namespace:
   """Parse command-line arguments."""
@@ -56,31 +53,23 @@ def parse_arguments() -> argparse.Namespace:
     choices=['DEBUG', 'INFO', 'WARNING', 'ERROR'],
     help='Set logging verbosity level'
   )
+  parser.add_argument(
+    '--denoise-logging',
+    action='store_true',
+    help='Reduce logging noise from dependencies'
+  )
   return parser.parse_args()
 
-
 def main() -> int:
-  """Main application entry point."""
   args = parse_arguments()
-  setup_logging(args.log_level)
-  log.info('Starting StreamCondor...')
-  sys.excepthook = excepthook
-  # Create QApplication
-  app = QApplication(sys.argv)
+  setup_logging(args)
+  app = QApplication([])
   app.setApplicationName('StreamCondor')
   app.setQuitOnLastWindowClosed(False)
-  app.setStyle('Fusion')  # Temporarily disabled - may interfere with notifications
-  # Initialize configuration
-  config_path = args.config
-  if not config_path:
-    config_dir = Path(QStandardPaths.writableLocation(
-      QStandardPaths.StandardLocation.ConfigLocation
-    ))
-    config_path = config_dir / 'StreamCondor.json'
-  # Create and show system tray icon
-  tray_icon = TrayIcon(app, config_path)
+  sys.excepthook = excepthook  ## uses QMessageBox so must be set after QApplication
+  tray_icon = TrayIcon(app, args.config)
   tray_icon.show()
-  log.info('StreamCondor started successfully')
+  log.info('StreamCondor started')
   return app.exec()
 
 

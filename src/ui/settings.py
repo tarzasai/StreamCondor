@@ -4,13 +4,12 @@ from PyQt6.QtWidgets import (
   QLabel, QSpinBox, QCheckBox, QComboBox, QLineEdit, QTextEdit, QSizePolicy,
   QMessageBox, QAbstractItemView
 )
-from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection, pyqtSignal
+from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection
 from PyQt6.QtGui import QIcon, QFont
 
 from model import Configuration, Stream, TrayIconColor, TrayIconAction
 from favicons import get_favicon
 from ui.stream import StreamDialog
-
 
 log = logging.getLogger(__name__)
 
@@ -236,29 +235,12 @@ class SettingsWindow(QWidget):
     return widget
 
   def _create_settings_tab(self) -> QWidget:
-    widget = QWidget()
-    layout = QVBoxLayout()
-
     # Auto-start monitoring
-    self.check_autostart_monitoring = QCheckBox('Start monitoring at startup')
+    self.check_autostart_monitoring = QCheckBox("to start monitoring on application launch")
+    self.check_autostart_monitoring.setMinimumHeight(24)
     self.check_autostart_monitoring.stateChanged.connect(
       lambda state: self.cfg.set('autostart_monitoring', state == Qt.CheckState.Checked.value)
     )
-    layout.addWidget(self.check_autostart_monitoring)
-
-    # Default notify
-    self.check_default_notify = QCheckBox('Enable notifications by default')
-    self.check_default_notify.stateChanged.connect(
-      lambda state: self.cfg.set('default_notify', state == Qt.CheckState.Checked.value)
-    )
-    layout.addWidget(self.check_default_notify)
-
-    # Create form layout for proper two-column alignment
-    form_layout = QFormLayout()
-    form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
-
-
-
     # Check interval
     self.spin_check_interval = QSpinBox()
     self.spin_check_interval.setMinimum(10)
@@ -267,8 +249,12 @@ class SettingsWindow(QWidget):
     self.spin_check_interval.valueChanged.connect(
       lambda value: self.cfg.set('check_interval', value)
     )
-    form_layout.addRow('Check interval (sec)', self.spin_check_interval)
-
+    # Default notify
+    self.check_default_notify = QCheckBox("to notify when streams go online")
+    self.check_default_notify.setMinimumHeight(24)
+    self.check_default_notify.stateChanged.connect(
+      lambda state: self.cfg.set('default_notify', state == Qt.CheckState.Checked.value)
+    )
     # tray icon color
     self.combo_tray_icon_color = QComboBox()
     for color in TrayIconColor:
@@ -276,8 +262,6 @@ class SettingsWindow(QWidget):
     self.combo_tray_icon_color.currentIndexChanged.connect(
       lambda index: self.cfg.set('tray_icon_color', self.combo_tray_icon_color.itemData(index).value)
     )
-    form_layout.addRow('Tray icon base color', self.combo_tray_icon_color)
-
     # tray icon action
     self.combo_tray_icon_action = QComboBox()
     for action in TrayIconAction:
@@ -285,58 +269,58 @@ class SettingsWindow(QWidget):
     self.combo_tray_icon_action.currentIndexChanged.connect(
       lambda index: self.cfg.set('tray_icon_action', self.combo_tray_icon_action.itemData(index).value)
     )
-    form_layout.addRow('Tray icon left click', self.combo_tray_icon_action)
-
     # Default quality
     self.combo_default_quality = QComboBox()
     self.combo_default_quality.addItems(['best', '1080p', '720p', '480p', '360p', '160p', 'worst'])
     self.combo_default_quality.currentTextChanged.connect(
       lambda text: self.cfg.set('default_quality', text)
     )
-    form_layout.addRow('Default quality:', self.combo_default_quality)
-
     # Default streamlink args (text area with monospace font)
     self.text_default_sl_args = QTextEdit()
-    self.text_default_sl_args.setMaximumHeight(120)
     font = QFont('monospace')
     self.text_default_sl_args.setFont(font)
     self.text_default_sl_args.setPlaceholderText('e.g., --retry-max 5 --stream-segment-timeout 20')
     self.text_default_sl_args.textChanged.connect(
       lambda: self.cfg.set('default_streamlink_args', self.text_default_sl_args.toPlainText())
     )
-    form_layout.addRow('Default Streamlink \narguments', self.text_default_sl_args)
-
-
-    hint_sl_args = QLabel('(see <a href="https://streamlink.github.io/cli.html#command-line-usage">documentation</a>)')
+    hint_sl_args = QLabel('''<html><head/><body>
+      <a href="https://streamlink.github.io/cli.html#command-line-usage" title="asd">
+        <span style=" text-decoration: underline; color:#4285f4;">Streamlink args</span>
+      </a>
+    </body></html>''')
     hint_sl_args.setOpenExternalLinks(True)
-    hint_sl_args.setWordWrap(True)
+    hint_sl_args.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
     hint_sl_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
-    form_layout.addRow('', hint_sl_args)
-
-
+    hint_sl_args.setToolTip('Click to open Streamlink command-line usage documentation')
     # Default media player
     self.text_default_player = QLineEdit()
     self.text_default_player.setPlaceholderText('e.g., mpv, vlc')
     self.text_default_player.textChanged.connect(
       lambda text: self.cfg.set('default_media_player', text)
     )
-    form_layout.addRow('Default player:', self.text_default_player)
-
     # Default media player args (text area with monospace font)
     self.text_default_mp_args = QTextEdit()
-    self.text_default_mp_args.setMaximumHeight(100)
     font = QFont('monospace')
     self.text_default_mp_args.setFont(font)
     self.text_default_mp_args.setPlaceholderText('e.g., --no-border --no-osc')
     self.text_default_mp_args.textChanged.connect(
       lambda: self.cfg.set('default_media_player_args', self.text_default_mp_args.toPlainText())
     )
-    form_layout.addRow('Default player \narguments', self.text_default_mp_args)
-
-    #
-    layout.addLayout(form_layout)
-    layout.addStretch()
-    widget.setLayout(layout)
+    # Form
+    form_layout = QFormLayout()
+    form_layout.setVerticalSizeConstraint(QFormLayout.SizeConstraint.SetMinimumSize)
+    form_layout.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.ExpandingFieldsGrow)
+    form_layout.addRow('Monitoring', self.check_autostart_monitoring)
+    form_layout.addRow('Check interval', self.spin_check_interval)
+    form_layout.addRow('Notifications', self.check_default_notify)
+    form_layout.addRow('Icon base color', self.combo_tray_icon_color)
+    form_layout.addRow('Icon left click', self.combo_tray_icon_action)
+    form_layout.addRow('Default quality', self.combo_default_quality)
+    form_layout.addRow(hint_sl_args, self.text_default_sl_args)
+    form_layout.addRow('Default player', self.text_default_player)
+    form_layout.addRow('Player args', self.text_default_mp_args)
+    widget = QWidget()
+    widget.setLayout(form_layout)
     return widget
 
   def _create_about_tab(self) -> QWidget:
