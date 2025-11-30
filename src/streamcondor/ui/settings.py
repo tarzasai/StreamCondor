@@ -345,7 +345,7 @@ class SettingsWindow(QWidget):
     links.setAlignment(Qt.AlignmentFlag.AlignCenter)
     links.setOpenExternalLinks(True)
     layout.addWidget(links)
-    copyright_text = QLabel('<p>© 2025 StreamCondor Contributors</p>')
+    copyright_text = QLabel('<p>© 2025 Tarzasai</p>')
     copyright_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(copyright_text)
     layout.addStretch(2)
