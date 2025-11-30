@@ -1,3 +1,35 @@
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "streamcondor"
+version = "1.0.0"
+description = "A system tray application for monitoring livestreams status"
+readme = "README.md"
+requires-python = ">=3.12"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [ { name = "StreamCondor Contributors" } ]
+keywords = ["stream", "tray", "monitor", "pyqt6"]
+classifiers = [
+	"Development Status :: 4 - Beta",
+	"Intended Audience :: End Users/Desktop",
+	"Programming Language :: Python :: 3",
+	"Programming Language :: Python :: 3.12",
+	"Operating System :: OS Independent",
+]
+
+dependencies = [
+	"PyQt6>=6.10.0",
+	"streamlink>=8.0.0",
+	"requests>=2.32.5",
+	"beautifulsoup4>=4.14.2",
+	"Pillow>=12.0.0",
+	"pyperclip>=1.11.0",
+	"pydantic>=2.12.5",
+]
+
+[project.scripts]
+streamcondor = "streamcondor.main:main"

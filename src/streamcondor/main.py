@@ -4,8 +4,8 @@ StreamCondor - A system tray application for monitoring livestreams.
 """
 import os
 import sys
-import argparse
 import logging
+import argparse
 from pathlib import Path
 from PyQt6.QtWidgets import QApplication, QMessageBox
 from streamlink.exceptions import StreamlinkError, NoPluginError
@@ -14,6 +14,8 @@ from streamcondor.ui.trayicon import TrayIcon
 
 log = logging.getLogger(__name__)
 
+os.environ.setdefault('QT_QPA_APPLICATION_NAME', 'StreamCondor')
+os.environ.setdefault('QT_QPA_ORG_NAME', 'StreamCondor')
 os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.services=false')
 
 

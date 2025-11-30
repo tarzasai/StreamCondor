@@ -20,20 +20,8 @@ def get_assets_dir() -> Path:
     # Running in a PyInstaller bundle
     return Path(sys._MEIPASS) / 'assets'
 
-  # Common locations to look for an `assets` directory:
-  candidates = [
-    # Package-installed location: <package>/assets
-    Path(__file__).parent / 'assets',
-    # Development layout: src/assets (one level up from package)
-    Path(__file__).parent.parent / 'assets',
-    # Project root assets (two levels up)
-    Path(__file__).parent.parent.parent / 'assets',
-  ]
-  for c in candidates:
-    if c.exists():
-      return c
-  # Fallback to package assets path even if it doesn't exist (keeps behavior predictable)
-  return candidates[0]
+  # Development mode - assets are in src/assets
+  return Path(__file__).parent / 'assets'
 
 
 def get_asset_path(filename: str) -> Path:
