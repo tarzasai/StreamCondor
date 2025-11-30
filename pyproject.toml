@@ -1,11 +1,11 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "wheel", "setuptools_scm[toml]>=6.0"]
 build-backend = "setuptools.build_meta"
 
 
 [project]
 name = "streamcondor"
-version = "1.0.0"
+dynamic = ["version"]
 description = "A system tray application for monitoring livestreams status"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -35,3 +35,8 @@ dependencies = [
 
 [project.scripts]
 streamcondor = "streamcondor.main:main"
+
+[tool.setuptools_scm]
+version_scheme = "post-release"
+local_scheme = "no-local-version"
+write_to = "src/streamcondor/_version.py"

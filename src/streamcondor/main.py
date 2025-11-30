@@ -1,7 +1,4 @@
 #!/usr/bin/env python3
-"""
-StreamCondor - A system tray application for monitoring livestreams.
-"""
 import os
 import sys
 import logging
@@ -11,11 +8,12 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 from streamlink.exceptions import StreamlinkError, NoPluginError
 
 from streamcondor.ui.trayicon import TrayIcon
+from streamcondor.resources import get_app_icon
 
 log = logging.getLogger(__name__)
 
-os.environ.setdefault('QT_QPA_APPLICATION_NAME', 'StreamCondor')
 os.environ.setdefault('QT_QPA_ORG_NAME', 'StreamCondor')
+os.environ.setdefault('QT_QPA_APPLICATION_NAME', 'StreamCondor')
 os.environ.setdefault('QT_LOGGING_RULES', 'qt.qpa.services=false')
 
 
@@ -40,7 +38,6 @@ def excepthook(exc_type, exc_value, exc_tb):
   QMessageBox.critical(None, "StreamCondor Error", msg)
 
 def parse_arguments() -> argparse.Namespace:
-  """Parse command-line arguments."""
   parser = argparse.ArgumentParser(
     description='StreamCondor - Monitor livestreams from system tray'
   )
@@ -67,8 +64,13 @@ def main() -> int:
   setup_logging(args)
   app = QApplication([])
   app.setApplicationName('StreamCondor')
+  app.setWindowIcon(get_app_icon('app'))
+  try:
+    app.setDesktopFileName('streamcondor.desktop')
+  except Exception:
+    pass ## Older Qt bindings or platforms may not support this; ignore safely.
   app.setQuitOnLastWindowClosed(False)
-  sys.excepthook = excepthook  ## uses QMessageBox so must be set after QApplication
+  sys.excepthook = excepthook ## uses QMessageBox so must be set after QApplication
   tray_icon = TrayIcon(app, args.config)
   tray_icon.show()
   return app.exec()

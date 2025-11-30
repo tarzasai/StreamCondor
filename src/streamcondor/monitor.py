@@ -1,8 +1,5 @@
-"""
-Stream monitoring thread for StreamCondor.
-"""
-import logging
 import time
+import logging
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from streamcondor.model import Configuration, Stream

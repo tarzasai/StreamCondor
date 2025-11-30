@@ -170,7 +170,7 @@ class _Favicons:
 
 favicons = None
 
-def get_favicon(stream: Stream, size: int = 16) -> QPixmap | None:
+def get_stream_icon(stream: Stream, size: int = 16) -> QPixmap | None:
   global favicons
   if favicons is None:
     favicons = _Favicons()

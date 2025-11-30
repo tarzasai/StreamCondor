@@ -25,7 +25,7 @@ def test_tray_update_menu_adds_online_streams(app, tmp_path):
     from streamcondor.ui.trayicon import TrayIcon
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
-    with patch('streamcondor.ui.trayicon.get_favicon') as mock_fav:
+    with patch('streamcondor.ui.trayicon.get_stream_icon') as mock_fav:
         mock_fav.return_value = None
         ti = TrayIcon(None, str(cfg.config_path))
         # inject fake online streams into monitor

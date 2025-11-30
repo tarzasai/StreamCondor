@@ -8,9 +8,9 @@ from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
 from streamcondor.model import Configuration, TrayIconColor, TrayIconStatus, TrayIconAction, Stream
 from streamcondor.monitor import StreamMonitor
-from streamcondor.slhelper import sls, launch_process, build_sl_command
 from streamcondor.favicons import get_stream_icon
-from streamcondor.resources import get_app_icon
+from streamcondor.slhelper import sls, launch_process, build_sl_command
+from streamcondor.resources import get_asset_path
 from streamcondor.ui.settings import SettingsWindow
 
 log = logging.getLogger(__name__)
@@ -20,11 +20,14 @@ class TrayIcon(QSystemTrayIcon):
 
   def __init__(self, parent, config_path: str):
     super().__init__(parent)
+
+
     if not config_path:
       config_dir = Path(QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.ConfigLocation
       ))
       config_path = config_dir / 'StreamCondor.json'
+
     self.cfg = Configuration(config_path)
     self.cfg.config_changed.connect(self._update_icon)
     self.activated.connect(self._on_tray_icon_action)
@@ -34,28 +37,27 @@ class TrayIcon(QSystemTrayIcon):
     self._create_menu()
     self._create_monitor()
     self._update_icon()
-    log.info('StreamCondor started')
 
   def _create_icons(self) -> None:
-    self.tray_icons = {
-      TrayIconColor.WHITE: {
-        TrayIconStatus.OFF: get_app_icon('sc_w_off'),
-        TrayIconStatus.IDLE: get_app_icon('sc_w_idle'),
-        TrayIconStatus.LIVE: get_app_icon('sc_w_live'),
-        TrayIconStatus.VIPS: get_app_icon('sc_w_vips'),
-      },
-      TrayIconColor.BLACK: {
-        TrayIconStatus.OFF: get_app_icon('sc_b_off'),
-        TrayIconStatus.IDLE: get_app_icon('sc_b_idle'),
-        TrayIconStatus.LIVE: get_app_icon('sc_b_live'),
-        TrayIconStatus.VIPS: get_app_icon('sc_b_vips'),
-      }
-    }
-    # Initial tray icon
-    self.setIcon(self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF])
     # Icons to emulate checkbox states in menu (with both icons and standard checkboxes the menu looks weird)
     self.icon_checked = QIcon.fromTheme('ok', QIcon.fromTheme('dialog-ok'))
     self.icon_unchecked = QIcon.fromTheme('emblem-none', QIcon.fromTheme('dialog-cancel'))
+    # Tray state icons
+    self.tray_icons = {
+      TrayIconColor.WHITE: {
+        TrayIconStatus.OFF: QIcon(str(get_asset_path('sc_w_off.png'))),
+        TrayIconStatus.IDLE: QIcon(str(get_asset_path('sc_w_idle.png'))),
+        TrayIconStatus.LIVE: QIcon(str(get_asset_path('sc_w_live.png'))),
+        TrayIconStatus.VIPS: QIcon(str(get_asset_path('sc_w_vips.png'))),
+      },
+      TrayIconColor.BLACK: {
+        TrayIconStatus.OFF: QIcon(str(get_asset_path('sc_b_off.png'))),
+        TrayIconStatus.IDLE: QIcon(str(get_asset_path('sc_b_idle.png'))),
+        TrayIconStatus.LIVE: QIcon(str(get_asset_path('sc_b_live.png'))),
+        TrayIconStatus.VIPS: QIcon(str(get_asset_path('sc_b_vips.png'))),
+      }
+    }
+    self.setIcon(self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF])
 
   def _create_menu(self) -> None:
     self.menu = QMenu()
@@ -73,6 +75,8 @@ class TrayIcon(QSystemTrayIcon):
     self.action_toggle_notifications = QAction('Notifications', self.menu)
     self.action_toggle_notifications.triggered.connect(self._toggle_notifications)
     self.menu.addAction(self.action_toggle_notifications)
+    # Separator
+    self.menu.addSeparator()
     # Settings
     action_settings = QAction('Settings', self.menu)
     action_settings.triggered.connect(self._open_settings)
@@ -82,7 +86,6 @@ class TrayIcon(QSystemTrayIcon):
     action_quit.triggered.connect(self._quit)
     self.menu.addAction(action_quit)
     # Finish
-    self.menu.insertSeparator(action_settings)
     self.menu.aboutToShow.connect(self._update_menu)
     self.setContextMenu(self.menu)
 
@@ -98,6 +101,8 @@ class TrayIcon(QSystemTrayIcon):
     self.action_toggle_notifications.setIcon(self.icon_checked if self.notify else self.icon_unchecked)
     # Update online streams in menu
     all_actions = self.menu.actions()
+    # start_index = all_actions.index(self.list_top_sep) + 1
+    # end_index = all_actions.index(self.action_toggle_monitoring)
     for i in range(
       all_actions.index(self.list_top_separator) + 1,
       all_actions.index(self.action_toggle_monitoring)
@@ -117,12 +122,14 @@ class TrayIcon(QSystemTrayIcon):
     online_streams = self.monitor.get_online_streams()
     has_lives = len(online_streams) > 0
     has_vips = any(s.notify == True for s in online_streams)
+    # Update icon
     self.setIcon(
       self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF] if self.monitor.paused else
       self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.VIPS] if has_vips else
       self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.LIVE] if has_lives else
       self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.IDLE]
     )
+    # Update tooltip
     tooltip = ['StreamCondor']
     if self.monitor.paused:
       tooltip.append('OFF (not checking streams)')
@@ -136,17 +143,13 @@ class TrayIcon(QSystemTrayIcon):
       stream_url, ok = QInputDialog.getText(None, 'Open Stream', 'Enter stream URL:')
       if not ok or not stream_url:
         return
-    stream = self.cfg.streams.get(stream_url)
-    if stream is None:
-      meta = sls.resolve_url(stream_url)  ## can throw NoPluginError (catched by main.excepthook)
-      stream_type = meta[0]
-      stream_name = 'Unknown'
-      stream = Stream(url=stream_url, type=stream_type, name=stream_name)
-    self._launch_stream(stream, check_status=True)
+    meta = sls.resolve_url(stream_url)  ## can throw NoPluginError (catched by main.excepthook)
+    stream_type = meta[0]
+    stream_name = 'Unknown'
+    stream = Stream(url=stream_url, type=stream_type, name=stream_name)
+    self._launch_stream(stream)
 
-  def _launch_stream(self, stream: Stream, check_status: bool = False) -> None:
-    if check_status and not bool(sls.streams(stream.url)):
-      raise RuntimeError(f'Stream {stream.name}/{stream.type} is not online.')
+  def _launch_stream(self, stream: Stream) -> None:
     launch_process(build_sl_command(self.cfg, stream))
 
   def _toggle_monitoring(self) -> None:
@@ -172,16 +175,16 @@ class TrayIcon(QSystemTrayIcon):
     QApplication.quit()
 
   def _on_tray_icon_action(self, reason: QSystemTrayIcon.ActivationReason) -> None:
-    if reason != QSystemTrayIcon.ActivationReason.Trigger:
-      pass
-    elif self.cfg.tray_icon_action == TrayIconAction.OPEN_URL:
-      self._open_url()
-    elif self.cfg.tray_icon_action == TrayIconAction.OPEN_CONFIG:
-      self._open_settings()
-    elif self.cfg.tray_icon_action == TrayIconAction.TOGGLE_MONITORING:
-      self._toggle_monitoring()
-    elif self.cfg.tray_icon_action == TrayIconAction.TOGGLE_NOTIFICATIONS:
-      self._toggle_notifications()
+    if reason == QSystemTrayIcon.ActivationReason.Trigger:  ## Left click
+      if self.cfg.tray_icon_action == TrayIconAction.OPEN_CONFIG:
+        self._open_settings()
+      elif self.cfg.tray_icon_action == TrayIconAction.OPEN_URL:
+        self._open_url()
+      elif self.cfg.tray_icon_action == TrayIconAction.TOGGLE_MONITORING:
+        self._toggle_monitoring()
+      elif self.cfg.tray_icon_action == TrayIconAction.TOGGLE_NOTIFICATIONS:
+        self._toggle_notifications()
+      # TrayIconAction.NOTHING does nothing
 
   def _on_stream_online(self, stream: Stream) -> None:
     self._update_icon()
@@ -203,3 +206,4 @@ def _check_url(url: str) -> str:
     return url
   except ValidationError:
     return None
+

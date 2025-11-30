@@ -159,3 +159,6 @@ samples/
 local_secrets.json
 infrastructure/terraform/environments/preprod/secrets.tfvars
 infrastructure/terraform/environments/prod/secrets.tfvars
+
+# setuptools_scm generated version file - do not track
+src/streamcondor/_version.py

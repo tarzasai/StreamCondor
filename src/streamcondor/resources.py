@@ -1,12 +1,12 @@
-"""Resource management for StreamCondor.
-
-This module provides utilities for accessing package resources (icons, assets)
-that work both in development and when the package is installed.
-"""
-from pathlib import Path
 import sys
+import logging
+from pathlib import Path
+from PyQt6.QtGui import QIcon
 
-def get_assets_dir() -> Path:
+log = logging.getLogger(__name__)
+
+
+def get_asset_path() -> Path:
   """Get the path to the assets directory.
 
   Returns:
@@ -24,13 +24,19 @@ def get_assets_dir() -> Path:
   return Path(__file__).parent / 'assets'
 
 
-def get_asset_path(filename: str) -> Path:
-  """Get the path to a specific asset file.
+def get_app_icon(base_name: str) -> QIcon:
+  """Get a QIcon for the specified base name, preferring SVG if available.
 
   Args:
-    filename: The name of the asset file (e.g., 'icon_monitoring_live.png')
+    base_name: The base name of the icon file without extension
+               (e.g., 'sc_w_live' for 'sc_w_live.svg' or 'sc_w_live.png')
 
   Returns:
-    Path: The absolute path to the asset file.
+    QIcon: The QIcon object for the specified icon.
   """
-  return get_assets_dir() / filename
+  try:
+    return QIcon(str(get_asset_path() / f"{base_name}.svg"))
+  except Exception as e:
+    log.debug(f"Unable to load SVG icon {base_name}, falling back to PNG: {e}")
+    return QIcon(str(get_asset_path() / f"{base_name}.png"))
+

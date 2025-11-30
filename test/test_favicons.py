@@ -5,7 +5,7 @@ from PIL import Image
 from pathlib import Path
 import requests
 
-from streamcondor.favicons import _Favicons, get_favicon, favicons
+from streamcondor.favicons import _Favicons, get_stream_icon, favicons
 from streamcondor.model import Stream
 
 

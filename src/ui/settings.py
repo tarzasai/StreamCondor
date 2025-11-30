@@ -6,18 +6,10 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection
 from PyQt6.QtGui import QIcon, QFont
-from importlib.metadata import version, PackageNotFoundError
 
 from streamcondor.model import Configuration, Stream, TrayIconColor, TrayIconAction
 from streamcondor.favicons import get_stream_icon
 from streamcondor.ui.stream import StreamDialog
-
-# Determine version: prefer installed distribution metadata, fallback to package __version__
-try:
-  dist_ver = version('streamcondor')
-except PackageNotFoundError:
-  import streamcondor
-  dist_ver = getattr(streamcondor, '__version__', 'dev')
 
 log = logging.getLogger(__name__)
 
@@ -224,21 +216,21 @@ class SettingsWindow(QWidget):
     self.stream_list.selectionModel().selectionChanged.connect(self._on_stream_selected)
     layout.addWidget(self.stream_list)
     # Buttons on the right side
+    button_layout = QVBoxLayout()
     self.btn_add = QPushButton('Add')
     self.btn_add.clicked.connect(self._add_stream)
+    button_layout.addWidget(self.btn_add)
     self.btn_edit = QPushButton('Edit')
     self.btn_edit.clicked.connect(self._edit_stream)
+    button_layout.addWidget(self.btn_edit)
     self.btn_clone = QPushButton('Clone')
     self.btn_clone.clicked.connect(self._clone_stream)
+    button_layout.addWidget(self.btn_clone)
     self.btn_delete = QPushButton('Delete')
     self.btn_delete.clicked.connect(self._delete_stream)
-    btn_box = QVBoxLayout()
-    btn_box.addWidget(self.btn_add)
-    btn_box.addWidget(self.btn_edit)
-    btn_box.addWidget(self.btn_clone)
-    btn_box.addWidget(self.btn_delete)
-    btn_box.addStretch()
-    layout.addLayout(btn_box)
+    button_layout.addWidget(self.btn_delete)
+    button_layout.addStretch()
+    layout.addLayout(button_layout)
     widget.setLayout(layout)
     return widget
 
@@ -335,6 +327,7 @@ class SettingsWindow(QWidget):
     widget = QWidget()
     layout = QVBoxLayout()
     layout.addStretch(1)
+    # Application name and version
     title = QLabel('<h1>StreamCondor</h1>')
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(title)
@@ -342,17 +335,17 @@ class SettingsWindow(QWidget):
     description.setAlignment(Qt.AlignmentFlag.AlignCenter)
     description.setWordWrap(True)
     layout.addWidget(description)
-    version = QLabel(f'<p>Version {dist_ver}</p>')
+    version = QLabel('<p>Version 1.0.0</p>')
     version.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(version)
     links = QLabel(
-      '<p><a href="https://github.com/tarzasai/StreamCondor">GitHub Repository</a></p>'
-      '<p><a href="https://github.com/tarzasai/StreamCondor/wiki">Documentation</a></p>'
+      '<p><a href="https://github.com/yourusername/streamcondor">GitHub Repository</a></p>'
+      '<p><a href="https://github.com/yourusername/streamcondor/wiki">Documentation</a></p>'
     )
     links.setAlignment(Qt.AlignmentFlag.AlignCenter)
     links.setOpenExternalLinks(True)
     layout.addWidget(links)
-    copyright_text = QLabel('<p>© 2025 Tarzasai</p>')
+    copyright_text = QLabel('<p>© 2025 StreamCondor Contributors</p>')
     copyright_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(copyright_text)
     layout.addStretch(2)

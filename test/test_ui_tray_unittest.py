@@ -12,7 +12,7 @@ class TestUITray(unittest.TestCase):
     def setUpClass(cls):
         cls._app = QApplication.instance() or QApplication([])
 
-    @patch('streamcondor.ui.trayicon.get_favicon')
+    @patch('streamcondor.ui.trayicon.get_stream_icon')
     @patch('streamcondor.ui.trayicon.launch_process')
     def test_tray_toggle_and_launch(self, mock_launch, mock_fav):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
