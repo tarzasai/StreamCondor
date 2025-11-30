@@ -16,20 +16,6 @@ Supported platforms: Linux, Windows, macOS (desktop with a system tray)
 
 Minimum requirement: Python 3.12
 
-## Install (recommended)
-
-Install the release from PyPI:
-
-```bash
-pip install streamcondor
-```
-
-Run the installed app:
-
-```bash
-streamcondor
-```
-
 ## Run from source (no install)
 
 To run a local copy without installing the package:
