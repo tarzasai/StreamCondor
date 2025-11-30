@@ -339,8 +339,8 @@ class SettingsWindow(QWidget):
     version.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(version)
     links = QLabel(
-      '<p><a href="https://github.com/yourusername/streamcondor">GitHub Repository</a></p>'
-      '<p><a href="https://github.com/yourusername/streamcondor/wiki">Documentation</a></p>'
+      '<p><a href="https://github.com/tarzasai/StreamCondor">GitHub Repository</a></p>'
+      '<p><a href="https://github.com/tarzasai/StreamCondor/wiki">Documentation</a></p>'
     )
     links.setAlignment(Qt.AlignmentFlag.AlignCenter)
     links.setOpenExternalLinks(True)

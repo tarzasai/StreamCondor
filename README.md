@@ -37,7 +37,7 @@ A lightweight system tray application for monitoring livestreams across multiple
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/streamcondor.git
+git clone https://github.com/tarzasai/StreamCondor.git
 cd streamcondor
 
 # Run the setup script

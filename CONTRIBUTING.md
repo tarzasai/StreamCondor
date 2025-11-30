@@ -128,15 +128,15 @@ Areas where contributions are especially welcome:
 1. **Fork the repository** on GitHub
 
 2. **Clone your fork**:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/streamcondor.git
-   cd streamcondor
-   ```
+  ```bash
+  git clone https://github.com/tarzasai/StreamCondor.git
+  cd StreamCondor
+  ```
 
 3. **Add upstream remote**:
-   ```bash
-   git remote add upstream https://github.com/ORIGINAL_OWNER/streamcondor.git
-   ```
+  ```bash
+  git remote add upstream https://github.com/tarzasai/StreamCondor.git
+  ```
 
 4. **Set up development environment**:
    ```bash

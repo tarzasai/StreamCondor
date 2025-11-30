@@ -37,7 +37,7 @@ git --version
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/streamcondor.git
+git clone https://github.com/tarzasai/StreamCondor.git
 cd streamcondor
 
 # Run setup script

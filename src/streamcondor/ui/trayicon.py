@@ -20,14 +20,11 @@ class TrayIcon(QSystemTrayIcon):
 
   def __init__(self, parent, config_path: str):
     super().__init__(parent)
-
-
     if not config_path:
       config_dir = Path(QStandardPaths.writableLocation(
         QStandardPaths.StandardLocation.ConfigLocation
       ))
       config_path = config_dir / 'StreamCondor.json'
-
     self.cfg = Configuration(config_path)
     self.cfg.config_changed.connect(self._update_icon)
     self.activated.connect(self._on_tray_icon_action)
@@ -37,6 +34,7 @@ class TrayIcon(QSystemTrayIcon):
     self._create_menu()
     self._create_monitor()
     self._update_icon()
+    log.info('StreamCondor started')
 
   def _create_icons(self) -> None:
     # Icons to emulate checkbox states in menu (with both icons and standard checkboxes the menu looks weird)
