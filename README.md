@@ -1,6 +1,16 @@
 # StreamCondor
 
-StreamCondor is a lightweight system-tray utility that monitors livestreams and opens them with your preferred player via Streamlink.
+StreamCondor is a lightweight system-tray utility that monitors livestreams and opens them with [Streamlink](https://streamlink.github.io/).
+
+## Features
+
+- 🔔 **Real-time Stream Monitoring** - Automatically detect when your favorite streamers go live
+- 🎯 **Multi-platform Support** - Works with Twitch, YouTube and any Streamlink-supported platform
+- 🖥️ **System Tray Integration** - Unobtrusive monitoring with visual status indicators
+- 🎨 **Custom Player Support** - Launch streams with mpv, VLC, or your preferred media player
+- ⚙️ **Flexible Configuration** - Per-stream settings for quality, notifications, and streamlink arguments
+- 🌐 **Favicon Support** - Automatic platform icon fetching and caching
+- 📋 **Clipboard Integration** - Quick stream launching from copied URLs
 
 Supported platforms: Linux, Windows, macOS (desktop with a system tray)
 
@@ -63,9 +73,6 @@ When reporting, include platform, steps to reproduce, and any terminal logs.
 ## License
 
 StreamCondor is licensed under the MIT License. See `LICENSE` for details.
-# Check streamlink directly
-streamlink --loglevel debug <url> best
-```
 
 ## License
 
@@ -73,7 +80,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
-- [streamlink](https://streamlink.github.io/) - Stream extraction library
+- [Streamlink](https://streamlink.github.io/) - Stream extraction library
 - [PyQt6](https://www.riverbankcomputing.com/software/pyqt/) - GUI framework
 - Contributors and testers
 
