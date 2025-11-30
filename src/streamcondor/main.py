@@ -71,7 +71,6 @@ def main() -> int:
   sys.excepthook = excepthook  ## uses QMessageBox so must be set after QApplication
   tray_icon = TrayIcon(app, args.config)
   tray_icon.show()
-  log.info('StreamCondor started')
   return app.exec()
 
 
