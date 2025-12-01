@@ -19,26 +19,28 @@ class TestTrayOpenUrl(unittest.TestCase):
 
     @patch('streamcondor.ui.trayicon.build_sl_command')
     @patch('streamcondor.ui.trayicon.launch_process')
-    @patch('streamcondor.ui.trayicon.sls')
+    @patch('streamcondor.ui.trayicon.is_stream_live')
     @patch('streamcondor.ui.trayicon.pyperclip')
-    def test_open_url_uses_clipboard_and_launches(self, mock_clip, mock_sls, mock_launch, mock_build):
+    def test_open_url_uses_clipboard_and_launches(self, mock_clip, mock_is_live, mock_launch, mock_build):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
         tmp.write(json.dumps({'streams': {}, 'check_interval': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
         tmp.flush(); tmp.close()
         from streamcondor.model import Configuration
         cfg = Configuration(Path(tmp.name))
         from streamcondor.ui.trayicon import TrayIcon
-        # prepare mocks
+        # prepare mocks using helpers
+        from test.test_helpers import mock_sls, mock_is_stream_live
         mock_clip.paste.return_value = 'https://x'
-        mock_sls.resolve_url.return_value = ('youtube',)
         mock_build.return_value = ['streamlink', 'https://x']
         mock_launch.return_value = True
 
-        ti = TrayIcon(None, str(cfg.config_path))
-        try:
-            ti._open_url()
-            mock_launch.assert_called()
-        finally:
-            ti.monitor.stop()
-            ti.monitor.wait()
-            ti.monitor.quit()
+        with mock_is_stream_live(return_value=('youtube', True)):
+            with mock_sls(resolve_return=('youtube',)):
+                ti = TrayIcon(None, str(cfg.config_path))
+                try:
+                    ti._open_url()
+                    mock_launch.assert_called()
+                finally:
+                    ti.monitor.stop()
+                    ti.monitor.wait()
+                    ti.monitor.quit()

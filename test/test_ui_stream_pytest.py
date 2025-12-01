@@ -20,14 +20,13 @@ def write_tmp_config(tmp_path):
     return cfgf
 
 
-def test_stream_preview_updates(app, tmp_path):
+def test_stream_preview_updates(app, tmp_path, mock_sls):
     from streamcondor.model import Configuration
     from streamcondor.ui.stream import StreamDialog
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     # patch sls.resolve_url so dialog creation and updates won't call real Streamlink
-    with patch('streamcondor.ui.stream.sls') as mock_sls:
-        mock_sls.resolve_url.return_value = ('youtube',)
+    with mock_sls(resolve_return=('youtube',)) as mock_sls_obj:
         # create dialog and fill fields while patched
         dlg = StreamDialog(None, cfg)
         dlg.text_url.setText('https://example.com/video')

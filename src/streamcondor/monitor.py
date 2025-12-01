@@ -3,7 +3,7 @@ import logging
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from streamcondor.model import Configuration, Stream
-from streamcondor.slhelper import is_stream_live, sls
+from streamcondor.slhelper import is_stream_live
 
 log = logging.getLogger(__name__)
 
