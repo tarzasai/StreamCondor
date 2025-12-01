@@ -3,7 +3,7 @@ import logging
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from streamcondor.model import Configuration, Stream
-from streamcondor.slhelper import sls
+from streamcondor.slhelper import is_stream_live, sls
 
 log = logging.getLogger(__name__)
 
@@ -40,16 +40,16 @@ class StreamMonitor(QThread):
     # Check only the first stream that's due
     if streams_to_check:
       url, _, stream = streams_to_check[0]
-      self._check_single_stream(url, stream)
+      self._check_single_stream(stream)
       self.last_check_time[url] = time.time()
 
-  def _check_single_stream(self, url: str, stream: Stream) -> None:
+  def _check_single_stream(self, stream: Stream) -> None:
     try:
-      is_online = bool(sls.streams(url))
+      _, is_online = is_stream_live(stream.url, self.cfg.default_streamlink_args, stream.sl_args)
     except Exception as e:
-      log.debug(f'Stream offline or error checking {url}: {e}')
+      log.debug(f'Stream offline or error checking {stream.url}: {e}')
       is_online = False
-    previous_status = self.stream_status.get(url, False)
+    previous_status = self.stream_status.get(stream.url, False)
     # Detect status changes
     if is_online and not previous_status:
       log.info(f'Stream online: {stream.name}')
@@ -57,7 +57,7 @@ class StreamMonitor(QThread):
     elif not is_online and previous_status:
       log.info(f'Stream offline: {stream.name}')
       self.stream_offline.emit(stream)
-    self.stream_status[url] = is_online
+    self.stream_status[stream.url] = is_online
 
   def stop(self) -> None:
     self.running = False

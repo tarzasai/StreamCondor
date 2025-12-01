@@ -9,6 +9,7 @@ from streamlink.exceptions import StreamlinkError, NoPluginError
 
 from streamcondor.ui.trayicon import TrayIcon
 from streamcondor.resources import get_app_icon
+from streamcondor.slhelper import load_sl_user_stuff
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +72,7 @@ def main() -> int:
     pass ## Older Qt bindings or platforms may not support this; ignore safely.
   app.setQuitOnLastWindowClosed(False)
   sys.excepthook = excepthook ## uses QMessageBox so must be set after QApplication
+  load_sl_user_stuff()  ## also requires QApplication
   tray_icon = TrayIcon(app, args.config)
   tray_icon.show()
   return app.exec()

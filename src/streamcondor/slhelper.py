@@ -5,6 +5,7 @@ import configparser
 import shlex
 import subprocess
 from streamlink import Streamlink
+from PyQt6.QtCore import QCoreApplication, QStandardPaths
 
 from streamcondor.model import Configuration, Stream
 
@@ -14,27 +15,54 @@ sls = Streamlink(
   plugins_builtin=True,
 )
 
-# Determine the path where a user config and plugins would be located based on the OS
-# There is probably a better way to do it... also I don't know where they should be in MacOS
-sl_user_path = \
-    os.path.join('.local', 'share') if platform.system() == 'Linux' else \
-    os.path.join('AppData', 'Roaming') if platform.system() == 'Windows' else \
-    None
 
-# This is needed to load the user streamlink config (if any)
-cfg_file = os.path.join(os.path.expanduser('~'), sl_user_path, 'streamlink', 'config')
-if os.path.exists(cfg_file):
+def load_sl_user_stuff() -> None:
+  # Load user config
+  config_dir = QStandardPaths.writableLocation(
+    QStandardPaths.StandardLocation.ConfigLocation
+  )
+  cfg_file = os.path.join(config_dir, 'streamlink', 'config')
+  if os.path.exists(cfg_file):
     cfg = configparser.ConfigParser(strict=False)
     with open(cfg_file) as ini:
-        cfg.read_string("[dummy]\n" + ini.read())
+      cfg.read_string("[dummy]\n" + ini.read())
     for key in cfg['dummy']:
-        try:
-            sls.set_option(key, cfg['dummy'][key])
-        except Exception as err:
-            print(f"SL config: {err}")
+      try:
+        sls.set_option(key, cfg['dummy'][key])
+        log.debug(f"Loaded Streamlink config option {key}={cfg['dummy'][key]}")
+      except Exception as err:
+        log.error(f"Streamlink config option {key} error: {err}")
+  # Load user plugins
+  plugins_dir = QStandardPaths.writableLocation(
+    QStandardPaths.StandardLocation.GenericDataLocation
+  )
+  plugins_path = os.path.join(plugins_dir, 'streamlink', 'plugins')
+  if os.path.exists(plugins_path) and sls.plugins.load_path(plugins_path):
+    log.debug(f"Loaded Streamlink user plugins from {plugins_path}: {', '.join(sls.plugins.get_names())}")
 
-# This is needed to load any user streamlink plugins
-sls.plugins.load_path(os.path.join(os.path.expanduser('~'), sl_user_path, 'streamlink', 'plugins'))
+
+def is_stream_live(url: str, global_args: str = None, stream_args: str = None) -> tuple[str, bool]:
+  # Let's try right away if it's a valid stream or raises NoPluginError
+  plugin_name, plugin_class, _ = sls.resolve_url(url)
+  # Protected streams needs credentials even if we are just checking the status, so we need to merge:
+  # 1. all the session options, loaded from the global config file and the user config file (if any)
+  # 2. global Streamlink args from StreamCondor config
+  # 3. stream-specific args from StreamCondor config
+  # Note:
+  # - the order is important here, as later args override earlier ones
+  # - Streamlink can be executed with multiple custom config files, but we cannot handle that here
+  all_args = sls.options.copy() | _parse_args_string(global_args) | _parse_args_string(stream_args)
+  # Then we need to extract the plugin-specific args and remove the prefix from the keys (perhaps it should
+  # be done by the Streamlink class, but it's actually done by Streamlink-CLI, so we have to do the same)
+  prefix = plugin_name + '-'
+  plugin_args = {k[len(prefix):]: v for k, v in all_args.items() if k.startswith(prefix)}
+  log.debug(f"Checking stream {url} with plugin {plugin_name} and args {plugin_args}")
+  # Now we can create the plugin instance passing the arguments with the correct names. Sadly this whole
+  # process is only needed by plugins that require authentication (e.g. BBCIplayer, maybe Twitch, etc)
+  plugin_instance = plugin_class(sls, url, plugin_args)
+  streams = plugin_instance.streams()
+  log.debug(f"Stream {url} has currently {len(streams)} available streams")
+  return plugin_name, bool(streams)
 
 
 def launch_process(command: str | list[str]) -> bool:
@@ -96,7 +124,7 @@ def _parse_args_string(args_string: str) -> dict[str, str | None]:
     Dictionary where keys are argument names (with dashes included) and values are
     either the argument value (str) or None for flags without values
   """
-  if not args_string.strip():
+  if args_string is None or not args_string.strip():
     return {}
   # Use shlex to properly handle quoted values
   tokens = shlex.split(args_string)

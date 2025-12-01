@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
 from streamcondor.model import Configuration, TrayIconColor, TrayIconStatus, TrayIconAction, Stream
 from streamcondor.monitor import StreamMonitor
-from streamcondor.slhelper import sls, launch_process, build_sl_command
+from streamcondor.slhelper import is_stream_live, launch_process, build_sl_command
 from streamcondor.favicons import get_stream_icon
 from streamcondor.resources import get_app_icon
 from streamcondor.ui.settings import SettingsWindow
@@ -138,15 +138,20 @@ class TrayIcon(QSystemTrayIcon):
         return
     stream = self.cfg.streams.get(stream_url)
     if stream is None:
-      meta = sls.resolve_url(stream_url)  ## can throw NoPluginError (catched by main.excepthook)
-      stream_type = meta[0]
+      stream_type, is_live = is_stream_live(stream_url)  ## can throw NoPluginError (catched by main.excepthook)
+      if not is_live:
+        self.showMessage(
+          'Stream Offline',
+          f'Stream at {stream_url} is not broadcasting.',
+          QSystemTrayIcon.MessageIcon.Warning,
+          5000
+        )
+        return
       stream_name = 'Unknown'
       stream = Stream(url=stream_url, type=stream_type, name=stream_name)
-    self._launch_stream(stream, check_status=True)
+    self._launch_stream(stream)
 
-  def _launch_stream(self, stream: Stream, check_status: bool = False) -> None:
-    if check_status and not bool(sls.streams(stream.url)):
-      raise RuntimeError(f'Stream {stream.name}/{stream.type} is not online.')
+  def _launch_stream(self, stream: Stream) -> None:
     launch_process(build_sl_command(self.cfg, stream))
 
   def _toggle_monitoring(self) -> None:
