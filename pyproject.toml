@@ -36,6 +36,10 @@ dependencies = [
 [project.scripts]
 streamcondor = "streamcondor.main:main"
 
+[project.urls]
+Repository = "https://github.com/tarzasai/StreamCondor"
+Issues = "https://github.com/tarzasai/StreamCondor/issues"
+
 [tool.setuptools_scm]
 version_scheme = "post-release"
 local_scheme = "no-local-version"
