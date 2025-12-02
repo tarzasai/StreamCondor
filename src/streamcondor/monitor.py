@@ -45,7 +45,12 @@ class StreamMonitor(QThread):
 
   def _check_single_stream(self, stream: Stream) -> None:
     try:
-      _, is_online = is_stream_live(stream.url, self.cfg.default_streamlink_args, stream.sl_args)
+      _, is_online = is_stream_live(
+        stream.url,
+        self.cfg.req_plugin_args_2_check,
+        self.cfg.default_streamlink_args,
+        stream.sl_args
+      )
     except Exception as e:
       log.debug(f'Stream offline or error checking {stream.url}: {e}')
       is_online = False

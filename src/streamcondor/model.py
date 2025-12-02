@@ -66,6 +66,15 @@ class Geometry(BaseModel):
   height: int = Field(..., description="Height of the application window")
 
 
+DEFAULT_REQ_PLUGIN_ARGS_2_CHECK = [
+  "username",
+  "password",
+  "email",
+  "session",
+  "token"
+]
+
+
 class ConfigModel(BaseModelWithEmptyToNone):
   autostart_monitoring: bool = Field(default=False, description="Whether monitoring starts automatically")
   check_interval: int = Field(default=60, description="Interval in seconds between stream checks")
@@ -78,6 +87,7 @@ class ConfigModel(BaseModelWithEmptyToNone):
   tray_icon_action: TrayIconAction = Field(default=TrayIconAction.NOTHING, description="Action on tray icon left-click")
   streams: dict[str, Stream] = Field(default_factory=dict, description="Configured streams")
   windows: dict[str, Geometry] | None = Field(default_factory=dict, description="Window geometry settings")
+  req_plugin_args_2_check: list[str] | None = Field(default=DEFAULT_REQ_PLUGIN_ARGS_2_CHECK, description="List of required plugin arguments to check")
 
 
 class Configuration(QObject):
@@ -177,6 +187,10 @@ class Configuration(QObject):
   @default_media_player_args.setter
   def default_media_player_args(self, value: str) -> None:
     self.set('default_media_player_args', value)
+
+  @property
+  def req_plugin_args_2_check(self) -> list[str]:
+    return self._cfg.req_plugin_args_2_check
 
   @property
   def streams(self) -> dict[str, Stream]:

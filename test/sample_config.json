@@ -66,5 +66,12 @@
       "width": 791,
       "height": 550
     }
-  }
+  },
+  "req_plugin_args_2_check": [
+    "username",
+    "password",
+    "email",
+    "session",
+    "token"
+  ]
 }

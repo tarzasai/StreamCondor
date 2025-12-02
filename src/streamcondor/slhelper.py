@@ -1,11 +1,10 @@
 import os
 import logging
-import platform
 import configparser
 import shlex
 import subprocess
 from streamlink import Streamlink
-from PyQt6.QtCore import QCoreApplication, QStandardPaths
+from PyQt6.QtCore import QStandardPaths
 
 from streamcondor.model import Configuration, Stream
 
@@ -41,27 +40,55 @@ def load_sl_user_stuff() -> None:
     log.debug(f"Loaded Streamlink user plugins from {plugins_path}: {', '.join(sls.plugins.get_names())}")
 
 
-def is_stream_live(url: str, global_args: str = None, stream_args: str = None) -> tuple[str, bool]:
-  # Let's try right away if it's a valid stream or raises NoPluginError
-  plugin_name, plugin_class, _ = sls.resolve_url(url)
-  # Protected streams needs credentials even if we are just checking the status, so we need to merge:
-  # 1. all the session options, loaded from the global config file and the user config file (if any)
-  # 2. global Streamlink args from StreamCondor config
-  # 3. stream-specific args from StreamCondor config
-  # Note:
-  # - the order is important here, as later args override earlier ones
-  # - Streamlink can be executed with multiple custom config files, but we cannot handle that here
+def is_stream_live(
+  stream_url: str,
+  auth_args: list[str],
+  global_args: str = None,
+  stream_args: str = None
+) -> tuple[str, bool]:
+  '''
+  Check if a stream is live using Streamlink, considering required plugin arguments.
+
+  Args:
+    url: Stream URL
+    req_args: List of required plugin argument names to check (e.g. username, password, etc)
+    global_args: Global Streamlink arguments string
+    stream_args: Stream-specific Streamlink arguments string
+
+  Returns:
+    Tuple of (plugin_name, is_live)
+  '''
+  # Let's try right away if it's a valid stream, otherwise it will raise NoPluginError
+  plugin_name, plugin_class, _ = sls.resolve_url(stream_url)
+  # Quick check; if streamlink find the streams we can return immediately
+  if len(sls.streams(stream_url)) > 0:
+    return plugin_name, True
+  # No streams? The plugin might require authentication
+  required_args = {}
+  arg_prefix = plugin_name + '-'
+  for k in plugin_class.arguments.keys():
+    if next((a for a in auth_args if a in k), None) is not None:
+      required_args[f"{arg_prefix}{k}"] = None
+  if not required_args:
+    return plugin_name, False # No authentication args for this plugin, I guess the stream is really offline
+  # We'll merge all the session options, global Streamlink args and stream-specific args in a single dict
+  # to find the values for the authentication arguments
   all_args = sls.options.copy() | _parse_args_string(global_args) | _parse_args_string(stream_args)
-  # Then we need to extract the plugin-specific args and remove the prefix from the keys (perhaps it should
-  # be done by the Streamlink class, but it's actually done by Streamlink-CLI, so we have to do the same)
-  prefix = plugin_name + '-'
-  plugin_args = {k[len(prefix):]: v for k, v in all_args.items() if k.startswith(prefix)}
-  log.debug(f"Checking stream {url} with plugin {plugin_name} and args {plugin_args}")
+  for k in required_args.keys():
+    if k in all_args:
+      required_args[k] = all_args[k]
+    else:
+      raise ValueError(f"Required argument {k} for plugin {plugin_name} not found in merged args")
+  # We need to remove the prefix from the arguments before passing them to the plugin
+  plugin_args = {}
+  for k in list(required_args.keys()):
+    plugin_args[k[len(arg_prefix):]] = required_args[k]
+  log.debug(f"Checking stream {stream_url} with plugin {plugin_name} and args {plugin_args}")
   # Now we can create the plugin instance passing the arguments with the correct names. Sadly this whole
   # process is only needed by plugins that require authentication (e.g. BBCIplayer, maybe Twitch, etc)
-  plugin_instance = plugin_class(sls, url, plugin_args)
+  plugin_instance = plugin_class(sls, stream_url, plugin_args)
   streams = plugin_instance.streams()
-  log.debug(f"Stream {url} has currently {len(streams)} available streams")
+  log.debug(f"Stream {stream_url} has currently {len(streams)} available streams")
   return plugin_name, bool(streams)
 
 
