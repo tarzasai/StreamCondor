@@ -22,6 +22,9 @@ class StreamMonitor(QThread):
 
   def run(self) -> None:
     while self.running:
+      for url, stream in self.cfg.streams.items():
+        if stream.always_on:
+          self.stream_status[url] = True
       if not self.paused:
         self._check_streams()
       self.msleep(150)  ## it must be short to keep the app responsive
@@ -29,7 +32,9 @@ class StreamMonitor(QThread):
   def _check_streams(self) -> None:
     # Filter enabled streams that need checking
     streams_to_check = []
-    for url in self.cfg.streams:
+    for url, stream in self.cfg.streams.items():
+      if stream.always_on:
+        continue
       last_check = self.last_check_time.get(url, 0)
       time_since_check = time.time() - last_check
       # Check if never checked or check_interval_mins has elapsed
@@ -72,6 +77,18 @@ class StreamMonitor(QThread):
 
   def resume(self) -> None:
     self.paused = False
+
+  def live_streams_count(self) -> int:
+    return sum(
+      1 for url, status in self.stream_status.items()
+        if status and url in self.cfg.streams and not self.cfg.streams[url].always_on
+    )
+
+  def vips_streams_count(self) -> int:
+    return sum(
+      1 for stream in self.cfg.streams.values()
+        if stream.notify and self.stream_status.get(stream.url, False)
+    )
 
   def get_online_streams(self) -> list[Stream]:
     online = [stream for stream in self.cfg.streams.values() if self.stream_status.get(stream.url, False)]

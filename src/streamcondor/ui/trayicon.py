@@ -114,9 +114,8 @@ class TrayIcon(QSystemTrayIcon):
       self.menu.insertSeparator(self.action_toggle_monitoring)
 
   def _update_icon(self) -> None:
-    online_streams = self.monitor.get_online_streams()
-    has_lives = len(online_streams) > 0
-    has_vips = any(s.notify == True for s in online_streams)
+    has_lives = self.monitor.live_streams_count() > 0
+    has_vips = self.monitor.vips_streams_count() > 0
     self.setIcon(
       self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.OFF] if self.monitor.paused else
       self.tray_icons[self.cfg.tray_icon_color][TrayIconStatus.VIPS] if has_vips else
@@ -126,8 +125,9 @@ class TrayIcon(QSystemTrayIcon):
     tooltip = ['StreamCondor']
     if self.monitor.paused:
       tooltip.append('OFF (not checking streams)')
-    elif has_lives:
-      tooltip.append(f'{len(online_streams)} stream(s) online!')
+    elif has_lives or has_vips:
+      count = self.monitor.live_streams_count()
+      tooltip.append(f'{count} stream(s) online')
     self.setToolTip('\n'.join(tooltip))
 
   def _open_url(self) -> None:

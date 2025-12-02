@@ -101,6 +101,9 @@ class StreamDialog(QDialog):
     self.check_notify.stateChanged.connect(self._update_notify_descr)
     self.check_notify.setTristate(True)
     self.check_notify.setCheckState(Qt.CheckState.Checked)
+    # Always on toggle
+    self.check_always_on = QCheckBox()
+    self.check_always_on.setText("This stream is always live (disable notifications and monitoring)")
     # Form
     form_layout = QFormLayout()
     form_layout.setVerticalSizeConstraint(QFormLayout.SizeConstraint.SetMinimumSize)
@@ -111,6 +114,7 @@ class StreamDialog(QDialog):
     form_layout.addRow('Media player', self.text_player)
     form_layout.addRow('Preferred quality', self.text_quality)
     form_layout.addRow('Notify when live', self.check_notify)
+    form_layout.addRow('Always streaming', self.check_always_on)
     widget = QWidget()
     widget.setLayout(form_layout)
     return widget
@@ -160,11 +164,16 @@ class StreamDialog(QDialog):
     self.text_url.setText(str(self.stream.url))
     self.text_type.setText(self.stream.type)
     self.text_name.setText(self.stream.name)
-    self.check_notify.setCheckState(_optionalBoolToCheckState(self.stream.notify))
     self.text_quality.setText(self.stream.quality)
     self.text_player.setText(self.stream.player)
     self.text_sl_args.setPlainText(self.stream.sl_args)
     self.text_mp_args.setPlainText(self.stream.mp_args)
+    self.check_always_on.setChecked(self.stream.always_on)
+    if self.stream.always_on:
+      self.check_notify.setChecked(False)
+      self.check_notify.setEnabled(False)
+    else:
+      self.check_notify.setCheckState(_optionalBoolToCheckState(self.stream.notify))
     self._update_preview()
 
   def _connect_signals(self) -> None:
@@ -174,6 +183,7 @@ class StreamDialog(QDialog):
     self.text_player.textChanged.connect(self._update_preview)
     self.text_sl_args.textChanged.connect(self._update_preview)
     self.text_mp_args.textChanged.connect(self._update_preview)
+    self.check_always_on.checkStateChanged.connect(self._on_always_on_changed)
     self.buttonBox.accepted.connect(self.accept)
     self.buttonBox.rejected.connect(self.reject)
 
@@ -201,6 +211,13 @@ class StreamDialog(QDialog):
       name_changed = name.strip() != ''
     self._toggle_save_state(url_changed or name_changed)
     self._update_preview()
+
+  def _on_always_on_changed(self, state: Qt.CheckState) -> None:
+    if state == Qt.CheckState.Checked:
+      self.check_notify.setChecked(False)
+      self.check_notify.setEnabled(False)
+    else:
+      self.check_notify.setEnabled(True)
 
   def _refresh_stream_info(self) -> None:
     url = self.text_url.text().strip()
@@ -242,7 +259,8 @@ class StreamDialog(QDialog):
       player=self.text_player.text().strip(),
       sl_args=self.text_sl_args.toPlainText().strip(),
       mp_args=self.text_mp_args.toPlainText().strip(),
-      notify=_checkStateToOptionalBool(self.check_notify.checkState())
+      notify=_checkStateToOptionalBool(self.check_notify.checkState()),
+      always_on=self.check_always_on.isChecked()
     )
 
 

@@ -138,10 +138,16 @@ class StreamListModel(QAbstractItemModel):
         stream = node.children[0].data
         pixmap = get_stream_icon(stream, 16)
         return QIcon(pixmap) if pixmap else None
-      return None # Stream nodes don't show icons
+      if node.is_stream():
+        stream = node.data
+        if stream.always_on:
+          return QIcon.fromTheme('network-wireless', QIcon.fromTheme('network-transmit-receive'))
+      return None
     elif role == Qt.ItemDataRole.CheckStateRole:
       if node.is_stream():
         stream = node.data
+        if stream.always_on:
+          return None
         return Qt.CheckState.PartiallyChecked if stream.notify is None \
           else Qt.CheckState.Checked if stream.notify else Qt.CheckState.Unchecked
       return None
@@ -172,9 +178,11 @@ class StreamListModel(QAbstractItemModel):
       return Qt.ItemFlag.NoItemFlags
     node = index.internalPointer()
     flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-    # Only stream nodes have checkboxes (tristate for indeterminate support)
+    # Only non-always_on stream nodes have checkboxes (tristate for indeterminate support)
     if node.is_stream():
-      flags |= Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsUserTristate
+      stream = node.data
+      if not stream.always_on:
+        flags |= Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsUserTristate
     return flags
 
   def refresh(self) -> None:

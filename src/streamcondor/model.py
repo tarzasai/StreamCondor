@@ -57,6 +57,7 @@ class Stream(BaseModelWithEmptyToNone):
   sl_args: str | None = Field(None, description="Additional Streamlink arguments")
   mp_args: str | None = Field(None, description="Additional media player arguments")
   notify: bool | None = Field(None, description="Whether to notify when stream goes live")
+  always_on: bool = Field(default=False, description="Whether to always consider the stream as live")
 
 
 class Geometry(BaseModel):

@@ -43,12 +43,16 @@ def test_update_icon_states(app, tmp_path):
         # one live stream
         s = Stream(url='https://x', name='X', type='youtube', notify=False)
         ti.monitor.get_online_streams = MagicMock(return_value=[s])
+        ti.monitor.live_streams_count = MagicMock(return_value=1)
+        ti.monitor.vips_streams_count = MagicMock(return_value=0)
         ti._update_icon()
         assert 'stream(s) online' in ti.toolTip()
 
         # vip stream (notify True)
         sv = Stream(url='https://v', name='V', type='youtube', notify=True)
         ti.monitor.get_online_streams = MagicMock(return_value=[sv])
+        ti.monitor.live_streams_count = MagicMock(return_value=1)
+        ti.monitor.vips_streams_count = MagicMock(return_value=1)
         ti.notify = True
         ti._update_icon()
         assert 'stream(s) online' in ti.toolTip()
