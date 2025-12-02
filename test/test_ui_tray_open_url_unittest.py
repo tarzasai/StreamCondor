@@ -23,7 +23,7 @@ class TestTrayOpenUrl(unittest.TestCase):
     @patch('streamcondor.ui.trayicon.pyperclip')
     def test_open_url_uses_clipboard_and_launches(self, mock_clip, mock_is_live, mock_launch, mock_build):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
-        tmp.write(json.dumps({'streams': {}, 'check_interval': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
+        tmp.write(json.dumps({'streams': {}, 'check_interval_mins': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
         tmp.flush(); tmp.close()
         from streamcondor.model import Configuration
         cfg = Configuration(Path(tmp.name))

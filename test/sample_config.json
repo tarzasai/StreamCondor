@@ -1,6 +1,6 @@
 {
   "autostart_monitoring": false,
-  "check_interval": 30,
+  "check_interval_mins": 1,
   "default_notify": true,
   "default_streamlink_args": "--title \"{author} - {title}\" --retry-max 5 --stream-segment-timeout 20",
   "default_quality": "720p",
@@ -63,15 +63,12 @@
     "settings_window": {
       "x": 0,
       "y": 0,
-      "width": 791,
-      "height": 550
+      "width": 642,
+      "height": 696
     }
   },
-  "req_plugin_args_2_check": [
+  "plugin_auth_args": [
     "username",
-    "password",
-    "email",
-    "session",
-    "token"
+    "password"
   ]
 }

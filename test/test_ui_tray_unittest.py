@@ -16,7 +16,7 @@ class TestUITray(unittest.TestCase):
     @patch('streamcondor.ui.trayicon.launch_process')
     def test_tray_toggle_and_launch(self, mock_launch, mock_fav):
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
-        tmp.write(json.dumps({'streams': {}, 'check_interval': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
+        tmp.write(json.dumps({'streams': {}, 'check_interval_mins': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}))
         tmp.flush(); tmp.close()
         from streamcondor.model import Configuration
         cfg = Configuration(Path(tmp.name))

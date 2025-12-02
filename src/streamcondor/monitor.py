@@ -32,8 +32,8 @@ class StreamMonitor(QThread):
     for url in self.cfg.streams:
       last_check = self.last_check_time.get(url, 0)
       time_since_check = time.time() - last_check
-      # Check if never checked or check_interval has elapsed
-      if last_check == 0 or time_since_check >= self.cfg.check_interval:
+      # Check if never checked or check_interval_mins has elapsed
+      if last_check == 0 or time_since_check >= (self.cfg.check_interval_mins * 60):
         streams_to_check.append((url, last_check, self.cfg.streams[url]))
     # Sort by last check time (oldest first, never checked go first)
     streams_to_check.sort(key=lambda x: x[1])
@@ -47,7 +47,7 @@ class StreamMonitor(QThread):
     try:
       _, is_online = is_stream_live(
         stream.url,
-        self.cfg.req_plugin_args_2_check,
+        self.cfg.plugin_auth_args,
         self.cfg.default_streamlink_args,
         stream.sl_args
       )

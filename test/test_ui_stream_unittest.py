@@ -19,7 +19,7 @@ class TestUIStreamDialog(unittest.TestCase):
     def test_stream_dialog_accepts_and_returns_stream(self):
         # prepare config file
         tmp = tempfile.NamedTemporaryFile('w+', delete=False)
-        json.dump({'streams': {}, 'check_interval': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}, tmp)
+        json.dump({'streams': {}, 'check_interval_mins': 60, 'autostart_monitoring': False, 'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}}, tmp)
         tmp.flush(); tmp.close()
         from streamcondor.model import Configuration
         cfg = Configuration(Path(tmp.name))

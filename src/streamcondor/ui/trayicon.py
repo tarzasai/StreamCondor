@@ -138,7 +138,7 @@ class TrayIcon(QSystemTrayIcon):
         return
     stream = self.cfg.streams.get(stream_url)
     if stream is None:
-      stream_type, is_live = is_stream_live(stream_url)  ## can throw NoPluginError (catched by main.excepthook)
+      stream_type, is_live = is_stream_live(stream_url, self.cfg.plugin_auth_args)  ## can throw NoPluginError
       if not is_live:
         self.showMessage(
           'Stream Offline',

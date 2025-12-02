@@ -14,13 +14,22 @@ def mock_sls(streams_return=None, resolve_return=None, resolve_side_effect=None)
   - resolve_return: value to return for `sls.resolve_url(...)`
   - resolve_side_effect: exception to raise from `sls.resolve_url(...)`
   """
-  with patch('streamcondor.slhelper.sls') as mock_sls:
+  # Patch both the source `sls` and any modules that imported it early
+  patches = [patch('streamcondor.slhelper.sls'), patch('streamcondor.ui.stream.sls')]
+  with patches[0] as mock_sls, patches[1] as mock_sls_ui:
     if streams_return is not None:
       mock_sls.streams.return_value = streams_return
     if resolve_return is not None:
       mock_sls.resolve_url.return_value = resolve_return
     if resolve_side_effect is not None:
       mock_sls.resolve_url.side_effect = resolve_side_effect
+    # Mirror settings to ui import so downstream modules see the same mock
+    if streams_return is not None:
+      mock_sls_ui.streams.return_value = streams_return
+    if resolve_return is not None:
+      mock_sls_ui.resolve_url.return_value = resolve_return
+    if resolve_side_effect is not None:
+      mock_sls_ui.resolve_url.side_effect = resolve_side_effect
     yield mock_sls
 
 @contextmanager

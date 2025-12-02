@@ -14,7 +14,7 @@ def app():
 def write_tmp_config(tmp_path):
     cfgf = tmp_path / 'cfg.json'
     cfgf.write_text(json.dumps({
-        'streams': {}, 'check_interval': 60, 'autostart_monitoring': False,
+        'streams': {}, 'check_interval_mins': 60, 'autostart_monitoring': False,
         'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}
     }))
     return cfgf
@@ -49,7 +49,7 @@ def test_stream_dialog_load_and_get_stream(qtbot):
     import tempfile, json
     from pathlib import Path
     tmp = tempfile.NamedTemporaryFile('w+', delete=False)
-    json.dump({'streams': {}, 'check_interval': 1, 'autostart_monitoring': False}, tmp)
+    json.dump({'streams': {}, 'check_interval_mins': 1, 'autostart_monitoring': False}, tmp)
     tmp.flush(); tmp.close()
     from streamcondor.model import Configuration
     from streamcondor.ui.stream import StreamDialog

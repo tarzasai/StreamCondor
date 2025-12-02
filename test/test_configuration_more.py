@@ -8,7 +8,7 @@ class TestConfigurationMore(unittest.TestCase):
         # Create a minimal config file
         cfg_data = Configuration.__annotations__ if False else {
             'autostart_monitoring': False,
-            'check_interval': 60,
+            'check_interval_mins': 60,
             'default_notify': False,
             'default_streamlink_args': '',
             'default_quality': 'best',
@@ -30,7 +30,7 @@ class TestConfigurationMore(unittest.TestCase):
             cfg.default_media_player_args = '--no-border'
             cfg.tray_icon_color = TrayIconColor.BLACK
             cfg.tray_icon_action = TrayIconAction.OPEN_URL
-            cfg.check_interval = 123
+            cfg.check_interval_mins = 123
             # verify properties
             self.assertTrue(cfg.autostart_monitoring)
             self.assertTrue(cfg.default_notify)
@@ -40,7 +40,7 @@ class TestConfigurationMore(unittest.TestCase):
             self.assertEqual(cfg.default_media_player_args, '--no-border')
             self.assertEqual(cfg.tray_icon_color, TrayIconColor.BLACK)
             self.assertEqual(cfg.tray_icon_action, TrayIconAction.OPEN_URL)
-            self.assertEqual(cfg.check_interval, 123)
+            self.assertEqual(cfg.check_interval_mins, 123)
             # stream operations
             s = Stream(url='https://x/', name='X', type='t')
             cfg.set_stream(s)

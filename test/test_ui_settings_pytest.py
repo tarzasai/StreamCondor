@@ -14,7 +14,7 @@ def app():
 def write_tmp_config(tmp_path):
     cfgf = tmp_path / 'cfg.json'
     cfgf.write_text(json.dumps({
-        'streams': {}, 'check_interval': 60, 'autostart_monitoring': False,
+        'streams': {}, 'check_interval_mins': 60, 'autostart_monitoring': False,
         'windows': {'settings_window': {'x':100,'y':100,'width':700,'height':600}}
     }))
     return cfgf
@@ -48,7 +48,7 @@ def _make_cfg(tmp_path):
             'https://a.example/': {'url': 'https://a.example/', 'name': 'A', 'type': 't1', 'notify': True},
             'https://b.example/': {'url': 'https://b.example/', 'name': 'B', 'type': 't2', 'notify': False},
         },
-        'check_interval': 60,
+        'check_interval_mins': 60,
         'autostart_monitoring': False,
         'windows': {'settings_window': {'x': 100, 'y': 100, 'width': 700, 'height': 600}}
     }))

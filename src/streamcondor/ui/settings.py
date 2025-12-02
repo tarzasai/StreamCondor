@@ -249,13 +249,15 @@ class SettingsWindow(QWidget):
     self.check_autostart_monitoring.stateChanged.connect(
       lambda state: self.cfg.set('autostart_monitoring', state == Qt.CheckState.Checked.value)
     )
-    # Check interval
+    # Check interval (minutes)
     self.spin_check_interval = QSpinBox()
-    self.spin_check_interval.setMinimum(10)
-    self.spin_check_interval.setMaximum(3600)
-    self.spin_check_interval.setValue(60)
+    self.spin_check_interval.setMinimum(1)   # 1 minute
+    self.spin_check_interval.setMaximum(60)  # 1 hour
+    self.spin_check_interval.setValue(5)     # default: 5 minutes
+    self.spin_check_interval.setSuffix(' min')
+    self.spin_check_interval.setToolTip('Interval between stream checks (in minutes)')
     self.spin_check_interval.valueChanged.connect(
-      lambda value: self.cfg.set('check_interval', value)
+      lambda value: self.cfg.set('check_interval_mins', value)
     )
     # Default notify
     self.check_default_notify = QCheckBox("to notify when streams go online")
@@ -381,7 +383,8 @@ class SettingsWindow(QWidget):
       if self.combo_tray_icon_color.itemData(i) == self.cfg.tray_icon_color:
         self.combo_tray_icon_color.setCurrentIndex(i)
         break
-    self.spin_check_interval.setValue(self.cfg.check_interval)
+    # support legacy property via Configuration
+    self.spin_check_interval.setValue(self.cfg.check_interval_mins)
     self.text_default_sl_args.setPlainText(self.cfg.default_streamlink_args)
     self.text_default_player.setText(self.cfg.default_media_player)
     self.text_default_mp_args.setPlainText(self.cfg.default_media_player_args)

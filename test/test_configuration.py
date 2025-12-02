@@ -16,7 +16,7 @@ class TestConfigurationLoadSave(unittest.TestCase):
         data = {
             'autostart_monitoring': False,
             'default_notify': True,
-            'check_interval': 60,
+            'check_interval_mins': 60,
             'default_streamlink_args': '',
             'default_quality': 'best',
             'default_media_player': '',

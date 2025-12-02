@@ -19,7 +19,7 @@ class TestMonitor(unittest.TestCase):
                 'https://a.example/': {'url': 'https://a.example/', 'name': 'A', 'type': 't1'},
                 'https://b.example/': {'url': 'https://b.example/', 'name': 'B', 'type': 't2'},
             },
-            'check_interval': 1,
+            'check_interval_mins': 1,
             'autostart_monitoring': False
         }
         json.dump(cfg, tmp)
@@ -76,7 +76,7 @@ class TestMonitor(unittest.TestCase):
                 'https://x.example/': {'url': 'https://x.example/', 'name': 'X', 'type': 'a'},
                 'https://y.example/': {'url': 'https://y.example/', 'name': 'Y', 'type': 'b'},
             },
-            'check_interval': 1,
+            'check_interval_mins': 1,
             'autostart_monitoring': False
         }
         json.dump(cfg, tmp)
@@ -108,7 +108,7 @@ class TestMonitor(unittest.TestCase):
             'streams': {
                 'https://err.example/': {'url': 'https://err.example/', 'name': 'Err', 'type': 'err'},
             },
-            'check_interval': 0,
+            'check_interval_mins': 0,
             'autostart_monitoring': True
         }
         json.dump(cfg, tmp)

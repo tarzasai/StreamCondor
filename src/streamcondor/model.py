@@ -66,18 +66,15 @@ class Geometry(BaseModel):
   height: int = Field(..., description="Height of the application window")
 
 
-DEFAULT_REQ_PLUGIN_ARGS_2_CHECK = [
+DEFAULT_PLUGIN_AUTH_ARGS = [
   "username",
-  "password",
-  "email",
-  "session",
-  "token"
+  "password"
 ]
 
 
 class ConfigModel(BaseModelWithEmptyToNone):
   autostart_monitoring: bool = Field(default=False, description="Whether monitoring starts automatically")
-  check_interval: int = Field(default=60, description="Interval in seconds between stream checks")
+  check_interval_mins: int = Field(default=5, description="Interval in minutes between stream checks")
   default_notify: bool = Field(default=False, description="Default notification setting for streams")
   default_streamlink_args: str | None = Field(default="--title \"{author} - {title}\"", description="Default Streamlink arguments")
   default_quality: str | None = Field(default="best", description="Default stream quality")
@@ -87,7 +84,7 @@ class ConfigModel(BaseModelWithEmptyToNone):
   tray_icon_action: TrayIconAction = Field(default=TrayIconAction.NOTHING, description="Action on tray icon left-click")
   streams: dict[str, Stream] = Field(default_factory=dict, description="Configured streams")
   windows: dict[str, Geometry] | None = Field(default_factory=dict, description="Window geometry settings")
-  req_plugin_args_2_check: list[str] | None = Field(default=DEFAULT_REQ_PLUGIN_ARGS_2_CHECK, description="List of required plugin arguments to check")
+  plugin_auth_args: list[str] | None = Field(default=DEFAULT_PLUGIN_AUTH_ARGS, description="List of required plugin arguments to check")
 
 
 class Configuration(QObject):
@@ -149,12 +146,12 @@ class Configuration(QObject):
     self.set('tray_icon_action', value)
 
   @property
-  def check_interval(self) -> int:
-    return self._cfg.check_interval
+  def check_interval_mins(self) -> int:
+    return self._cfg.check_interval_mins
 
-  @check_interval.setter
-  def check_interval(self, value: int) -> None:
-    self.set('check_interval', value)
+  @check_interval_mins.setter
+  def check_interval_mins(self, value: int) -> None:
+    self.set('check_interval_mins', value)
 
   @property
   def default_streamlink_args(self) -> str:
@@ -189,8 +186,8 @@ class Configuration(QObject):
     self.set('default_media_player_args', value)
 
   @property
-  def req_plugin_args_2_check(self) -> list[str]:
-    return self._cfg.req_plugin_args_2_check
+  def plugin_auth_args(self) -> list[str]:
+    return self._cfg.plugin_auth_args
 
   @property
   def streams(self) -> dict[str, Stream]:
