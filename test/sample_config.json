@@ -20,6 +20,7 @@
       "type": "twitch",
       "quality": "best",
       "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
+      "mp_args": "--ffdgfdg",
       "notify": false,
       "always_on": false
     },
@@ -36,6 +37,7 @@
       "name": "Gladd",
       "type": "twitch",
       "quality": "best",
+      "player": "vlc",
       "sl_args": "--twitch-proxy-playlist=https://as.luminous.dev,https://lb-na.cdn-perfprod.com,https://lb-eu.cdn-perfprod.com,https://lb-eu3.cdn-perfprod.com,https://lb-sa.cdn-perfprod.com,https://lb-eu2.cdn-perfprod.com,https://lb-as.cdn-perfprod.com,https://eu.luminous.dev,https://api.ttv.lol",
       "notify": false,
       "always_on": false
@@ -69,8 +71,8 @@
     "settings_window": {
       "x": 0,
       "y": 0,
-      "width": 642,
-      "height": 696
+      "width": 615,
+      "height": 545
     }
   },
   "plugin_auth_args": [

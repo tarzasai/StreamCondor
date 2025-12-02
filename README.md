@@ -14,7 +14,10 @@ StreamCondor is a lightweight system-tray utility that monitors livestreams and 
 
 Supported platforms: Linux, Windows, macOS (desktop with a system tray)
 
-Minimum requirement: Python 3.12
+## Screenshots
+
+![System Tray menu](./media/tray.png)   ![Streams Settings window](./media/settings1.png)   ![App Settings window](./media/settings2.png)   ![Stream Setting window](./media/stream1.png)   ![Stream Setting window](./media/stream2.png)   ![Stream Setting window](./media/stream3.png)
+
 
 ## Install (recommended)
 

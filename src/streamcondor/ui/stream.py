@@ -32,8 +32,8 @@ class StreamDialog(QDialog):
     self.stream = stream
     self.is_clone = is_clone
     self.is_new = stream is None and not is_clone
-    self.original_url = stream.url if is_clone and stream else ''
-    self.original_name = stream.name if is_clone and stream else ''
+    self.original_url = stream.url if stream else ''
+    self.original_name = stream.name if stream else ''
     self._init_ui()
     self._check_clipboard_for_url()
     self._load_stream_data()
@@ -174,6 +174,7 @@ class StreamDialog(QDialog):
       self.check_notify.setEnabled(False)
     else:
       self.check_notify.setCheckState(_optionalBoolToCheckState(self.stream.notify))
+    self._update_title()
     self._update_preview()
 
   def _connect_signals(self) -> None:
@@ -183,7 +184,7 @@ class StreamDialog(QDialog):
     self.text_player.textChanged.connect(self._update_preview)
     self.text_sl_args.textChanged.connect(self._update_preview)
     self.text_mp_args.textChanged.connect(self._update_preview)
-    self.check_always_on.checkStateChanged.connect(self._on_always_on_changed)
+    self.check_always_on.checkStateChanged.connect(self._on_alwayson_changed)
     self.buttonBox.accepted.connect(self.accept)
     self.buttonBox.rejected.connect(self.reject)
 
@@ -193,26 +194,16 @@ class StreamDialog(QDialog):
       self._toggle_save_state(False)
       return
     if self.is_clone:
-      current_name = self.text_name.text().strip()
-      url_changed = url.strip() != self.original_url
-      name_changed = current_name != self.original_name
-      self._toggle_save_state(url_changed or name_changed)
+      self._toggle_save_state(url.strip() != self.original_url)
     else:
       self._toggle_save_state(True)
     self._refresh_stream_info()
 
   def _on_name_changed(self, name: str) -> None:
-    current_url = self.text_url.text().strip()
-    if self.is_clone:
-      url_changed = current_url != self.original_url
-      name_changed = name.strip() != self.original_name
-    else:
-      url_changed = current_url != ''
-      name_changed = name.strip() != ''
-    self._toggle_save_state(url_changed or name_changed)
+    self._update_title()
     self._update_preview()
 
-  def _on_always_on_changed(self, state: Qt.CheckState) -> None:
+  def _on_alwayson_changed(self, state: Qt.CheckState) -> None:
     if state == Qt.CheckState.Checked:
       self.check_notify.setChecked(False)
       self.check_notify.setEnabled(False)
@@ -231,6 +222,13 @@ class StreamDialog(QDialog):
       except Exception as e:
         self._toggle_save_state(False)
         raise e
+
+  def _update_title(self) -> None:
+    self.setWindowTitle(
+      f"Clone '{self.original_name}'" if self.is_clone else
+      "Add Stream" if self.is_new else
+      f"Edit '{self.original_name}'"
+    )
 
   def _update_preview(self) -> None:
     url = self.text_url.text().strip()

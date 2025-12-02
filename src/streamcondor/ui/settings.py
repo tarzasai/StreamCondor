@@ -122,18 +122,37 @@ class StreamListModel(QAbstractItemModel):
     return parent_node.child_count()
 
   def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
-    return 1  # Single column with checkbox + icon + text
+    return 3  # Name (with checkbox/icon), Quality, Player
+
+  def headerData(self, section: int, orientation, role: int):
+    if orientation == Qt.Orientation.Horizontal and role == Qt.ItemDataRole.DisplayRole:
+      if section == 0:
+        return 'Stream'
+      elif section == 1:
+        return 'Pref. quality'
+      elif section == 2:
+        return 'Player'
+    return None
 
   def data(self, index: QModelIndex, role: int):
     if not index.isValid():
       return None
     node = index.internalPointer()
+    column = index.column()
+
     if role == Qt.ItemDataRole.DisplayRole:
       if node.is_group():
-        return node.data.capitalize() # Group node: show type name
-      else:
-        return node.data.name # Stream node: show stream name
-    elif role == Qt.ItemDataRole.DecorationRole:
+        if column == 0:
+          return node.data.capitalize()
+      elif node.is_stream():
+        stream = node.data
+        if column == 0:
+          return stream.name
+        if column == 1:
+          return stream.quality or self.cfg.default_quality
+        if column == 2:
+          return stream.player or self.cfg.default_media_player
+    elif role == Qt.ItemDataRole.DecorationRole and column == 0:
       if node.is_group():
         stream = node.children[0].data
         pixmap = get_stream_icon(stream, 16)
@@ -143,7 +162,7 @@ class StreamListModel(QAbstractItemModel):
         if stream.always_on:
           return QIcon.fromTheme('network-wireless', QIcon.fromTheme('network-transmit-receive'))
       return None
-    elif role == Qt.ItemDataRole.CheckStateRole:
+    elif role == Qt.ItemDataRole.CheckStateRole and column == 0:
       if node.is_stream():
         stream = node.data
         if stream.always_on:
@@ -177,9 +196,10 @@ class StreamListModel(QAbstractItemModel):
     if not index.isValid():
       return Qt.ItemFlag.NoItemFlags
     node = index.internalPointer()
+    column = index.column()
     flags = Qt.ItemFlag.ItemIsEnabled | Qt.ItemFlag.ItemIsSelectable
-    # Only non-always_on stream nodes have checkboxes (tristate for indeterminate support)
-    if node.is_stream():
+    # Only non-always_on stream nodes in first column have checkboxes (tristate for indeterminate support)
+    if column == 0 and node.is_stream():
       stream = node.data
       if not stream.always_on:
         flags |= Qt.ItemFlag.ItemIsUserCheckable | Qt.ItemFlag.ItemIsUserTristate
@@ -228,7 +248,11 @@ class SettingsWindow(QWidget):
     self.stream_list.setExpandsOnDoubleClick(False)  # Don't expand on double-click (we use it for edit)
     self.stream_list.expandAll()  # Expand all groups by default
     self.stream_list.doubleClicked.connect(self._edit_stream)
-    self.stream_list.setHeaderHidden(True)  # Hide header (we only have one column)
+    self.stream_list.setHeaderHidden(False)  # Show header for multiple columns
+    self.stream_list.header().setStretchLastSection(False)
+    self.stream_list.header().resizeSection(0, 300)  # Name column
+    self.stream_list.header().resizeSection(1, 100)  # Quality column
+    self.stream_list.header().resizeSection(2, 100)  # Player column
     self.stream_list.selectionModel().selectionChanged.connect(self._on_stream_selected)
     layout.addWidget(self.stream_list)
     # Buttons on the right side
