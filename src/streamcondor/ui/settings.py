@@ -9,6 +9,7 @@ from PyQt6.QtGui import QIcon, QFont
 from importlib.metadata import version, PackageNotFoundError
 
 from streamcondor.model import Configuration, Stream, TrayIconColor, TrayIconAction
+from streamcondor.slhelper import launch_process, build_sl_command
 from streamcondor.favicons import get_stream_icon
 from streamcondor.ui.stream import StreamDialog
 
@@ -151,7 +152,7 @@ class StreamListModel(QAbstractItemModel):
         if column == 1:
           return stream.quality or self.cfg.default_quality
         if column == 2:
-          return stream.player or self.cfg.default_media_player
+          return stream.player or self.cfg.default_player
     elif role == Qt.ItemDataRole.DecorationRole and column == 0:
       if node.is_group():
         stream = node.children[0].data
@@ -264,11 +265,20 @@ class SettingsWindow(QWidget):
     self.btn_clone.clicked.connect(self._clone_stream)
     self.btn_delete = QPushButton('Delete')
     self.btn_delete.clicked.connect(self._delete_stream)
+    self.btn_run_defp = QPushButton('Launch\ndefault')
+    self.btn_run_defp.setToolTip('Launch stream with default media player')
+    self.btn_run_defp.clicked.connect(self._launch_stream_default_player)
+    self.btn_run_altp = QPushButton('Launch\naltern.')
+    self.btn_run_altp.setToolTip('Launch stream with alternate media player')
+    self.btn_run_altp.clicked.connect(self._launch_stream_alternate_player)
     btn_box = QVBoxLayout()
     btn_box.addWidget(self.btn_add)
     btn_box.addWidget(self.btn_edit)
     btn_box.addWidget(self.btn_clone)
     btn_box.addWidget(self.btn_delete)
+    btn_box.addSpacing(20)
+    btn_box.addWidget(self.btn_run_defp)
+    btn_box.addWidget(self.btn_run_altp)
     btn_box.addStretch()
     layout.addLayout(btn_box)
     widget.setLayout(layout)
@@ -337,16 +347,28 @@ class SettingsWindow(QWidget):
     # Default media player
     self.text_default_player = QLineEdit()
     self.text_default_player.setPlaceholderText('e.g., mpv, vlc')
-    self.text_default_player.textChanged.connect(
-      lambda text: self.cfg.set('default_media_player', text)
-    )
+    self.text_default_player.textChanged.connect(self._default_player_changed)
     # Default media player args (text area with monospace font)
-    self.text_default_mp_args = QTextEdit()
+    self.text_default_player_args = QTextEdit()
     font = QFont('monospace')
-    self.text_default_mp_args.setFont(font)
-    self.text_default_mp_args.setPlaceholderText('e.g., --no-border --no-osc')
-    self.text_default_mp_args.textChanged.connect(
-      lambda: self.cfg.set('default_media_player_args', self.text_default_mp_args.toPlainText())
+    self.text_default_player_args.setFont(font)
+    self.text_default_player_args.setPlaceholderText('e.g., --no-border --no-osc')
+    self.text_default_player_args.setMaximumHeight(60)
+    self.text_default_player_args.textChanged.connect(
+      lambda: self.cfg.set('default_player_args', self.text_default_player_args.toPlainText())
+    )
+    # Alternate media player
+    self.text_alternate_player = QLineEdit()
+    self.text_alternate_player.setPlaceholderText('e.g., mpv, vlc')
+    self.text_alternate_player.textChanged.connect(self._alternate_player_changed)
+    # Alternate media player args (text area with monospace font)
+    self.text_alternate_player_args = QTextEdit()
+    font = QFont('monospace')
+    self.text_alternate_player_args.setFont(font)
+    self.text_alternate_player_args.setPlaceholderText('e.g., --no-border --no-osc')
+    self.text_alternate_player_args.setMaximumHeight(60)
+    self.text_alternate_player_args.textChanged.connect(
+      lambda: self.cfg.set('alternate_player_args', self.text_alternate_player_args.toPlainText())
     )
     # Form
     form_layout = QFormLayout()
@@ -360,7 +382,9 @@ class SettingsWindow(QWidget):
     form_layout.addRow('Default quality', self.combo_default_quality)
     form_layout.addRow(hint_sl_args, self.text_default_sl_args)
     form_layout.addRow('Default player', self.text_default_player)
-    form_layout.addRow('Player args', self.text_default_mp_args)
+    form_layout.addRow('Def. player args', self.text_default_player_args)
+    form_layout.addRow('Alternate player', self.text_alternate_player)
+    form_layout.addRow('Alt. player args', self.text_alternate_player_args)
     widget = QWidget()
     widget.setLayout(form_layout)
     return widget
@@ -400,10 +424,12 @@ class SettingsWindow(QWidget):
     self.combo_tray_icon_color.blockSignals(True)
     self.combo_tray_icon_action.blockSignals(True)
     self.spin_check_interval.blockSignals(True)
+    self.combo_default_quality.blockSignals(True)
     self.text_default_sl_args.blockSignals(True)
     self.text_default_player.blockSignals(True)
-    self.text_default_mp_args.blockSignals(True)
-    self.combo_default_quality.blockSignals(True)
+    self.text_default_player_args.blockSignals(True)
+    self.text_alternate_player.blockSignals(True)
+    self.text_alternate_player_args.blockSignals(True)
     # Settings tab values
     self.check_autostart_monitoring.setChecked(self.cfg.autostart_monitoring)
     self.check_default_notify.setChecked(self.cfg.default_notify)
@@ -415,47 +441,58 @@ class SettingsWindow(QWidget):
       if self.combo_tray_icon_color.itemData(i) == self.cfg.tray_icon_color:
         self.combo_tray_icon_color.setCurrentIndex(i)
         break
-    # support legacy property via Configuration
     self.spin_check_interval.setValue(self.cfg.check_interval_mins)
-    self.text_default_sl_args.setPlainText(self.cfg.default_streamlink_args)
-    self.text_default_player.setText(self.cfg.default_media_player)
-    self.text_default_mp_args.setPlainText(self.cfg.default_media_player_args)
     default_quality = self.cfg.default_quality
     index = self.combo_default_quality.findText(default_quality)
     if index >= 0:
       self.combo_default_quality.setCurrentIndex(index)
+    self.text_default_sl_args.setPlainText(self.cfg.default_streamlink_args)
+    self.text_default_player.setText(self.cfg.default_player)
+    self.text_default_player_args.setPlainText(self.cfg.default_player_args)
+    self.text_alternate_player.setText(self.cfg.alternate_player)
+    self.text_alternate_player_args.setPlainText(self.cfg.alternate_player_args)
     # Re-enable signals and connect to auto-save
     self.check_autostart_monitoring.blockSignals(False)
     self.check_default_notify.blockSignals(False)
     self.combo_tray_icon_color.blockSignals(False)
     self.combo_tray_icon_action.blockSignals(False)
     self.spin_check_interval.blockSignals(False)
+    self.combo_default_quality.blockSignals(False)
     self.text_default_sl_args.blockSignals(False)
     self.text_default_player.blockSignals(False)
-    self.text_default_mp_args.blockSignals(False)
-    self.combo_default_quality.blockSignals(False)
+    self.text_default_player_args.blockSignals(False)
+    self.text_alternate_player.blockSignals(False)
+    self.text_alternate_player_args.blockSignals(False)
 
   def _on_stream_selected(self, selected:QItemSelection, deselected:QItemSelection) -> None:
     if not selected or selected.isEmpty():
       self.btn_edit.setEnabled(False)
       self.btn_clone.setEnabled(False)
       self.btn_delete.setEnabled(False)
+      self.btn_run_defp.setVisible(False)
+      self.btn_run_altp.setVisible(False)
       return
     index = selected.indexes()[0]
     if not index.isValid():
       self.btn_edit.setEnabled(False)
       self.btn_clone.setEnabled(False)
       self.btn_delete.setEnabled(False)
+      self.btn_run_defp.setVisible(False)
+      self.btn_run_altp.setVisible(False)
       return
     node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
     if not node or node.is_group():
       self.btn_edit.setEnabled(False)
       self.btn_clone.setEnabled(False)
       self.btn_delete.setEnabled(False)
+      self.btn_run_defp.setVisible(False)
+      self.btn_run_altp.setVisible(False)
     else:
       self.btn_edit.setEnabled(True)
       self.btn_clone.setEnabled(True)
       self.btn_delete.setEnabled(True)
+      self.btn_run_defp.setVisible(True)
+      self.btn_run_altp.setVisible(self.cfg.alternate_player is not None and self.cfg.alternate_player.strip() != '')
 
   def _reload_treeview(self) -> None:
     # Save Treeview current expansion state
@@ -541,6 +578,36 @@ class SettingsWindow(QWidget):
     if reply == QMessageBox.StandardButton.Yes:
       self.cfg.del_stream(stream)
       self._reload_treeview()
+
+  def _launch_stream_default_player(self) -> None:
+    index = self.stream_list.currentIndex()
+    if not index.isValid():
+      return
+    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    if not node or node.is_group():
+      return
+    launch_process(build_sl_command(self.cfg, node.data))
+
+  def _launch_stream_alternate_player(self) -> None:
+    index = self.stream_list.currentIndex()
+    if not index.isValid():
+      return
+    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    if not node or node.is_group():
+      return
+    launch_process(build_sl_command(self.cfg, node.data, True))
+
+  def _default_player_changed(self, text: str) -> None:
+    self.cfg.default_player = text
+    no_player = text is None or text.strip() == ''
+    self.text_default_player_args.setDisabled(no_player)
+    self.text_alternate_player.setDisabled(no_player)
+    self.text_alternate_player_args.setDisabled(no_player)
+
+  def _alternate_player_changed(self, text: str) -> None:
+    self.cfg.alternate_player = text
+    no_player = text is None or text.strip() == ''
+    self.text_alternate_player_args.setDisabled(no_player)
 
   def _restore_geometry(self) -> None:
     geometry = self.cfg.get_geometry('settings_window')

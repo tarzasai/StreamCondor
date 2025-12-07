@@ -27,9 +27,10 @@ class TrayIcon(QSystemTrayIcon):
       config_path = config_dir / 'StreamCondor.json'
     self.cfg = Configuration(config_path)
     self.cfg.config_changed.connect(self._update_icon)
-    self.activated.connect(self._on_tray_icon_action)
+    self.activated.connect(self._on_tray_action)
     self.settings = SettingsWindow(self.cfg)
     self.notify = self.cfg.default_notify
+    self.click = self.cfg.tray_icon_action
     self._create_icons()
     self._create_menu()
     self._create_monitor()
@@ -59,30 +60,6 @@ class TrayIcon(QSystemTrayIcon):
 
   def _create_menu(self) -> None:
     self.menu = QMenu()
-    # Open URL action
-    self.action_open_url = QAction(TrayIconAction.OPEN_URL.display_name, self.menu)
-    self.action_open_url.triggered.connect(self._open_url)
-    self.menu.addAction(self.action_open_url)
-    # Separator before online streams
-    self.list_top_separator = self.menu.addSeparator()
-    # Toggle monitoring (online streams will be added above)
-    self.action_toggle_monitoring = QAction('Monitoring', self.menu)
-    self.action_toggle_monitoring.triggered.connect(self._toggle_monitoring)
-    self.menu.addAction(self.action_toggle_monitoring)
-    # Toggle notifications
-    self.action_toggle_notifications = QAction('Notifications', self.menu)
-    self.action_toggle_notifications.triggered.connect(self._toggle_notifications)
-    self.menu.addAction(self.action_toggle_notifications)
-    # Settings
-    action_settings = QAction('Settings', self.menu)
-    action_settings.triggered.connect(self._open_settings)
-    self.menu.addAction(action_settings)
-    # Quit
-    action_quit = QAction('Quit', self.menu)
-    action_quit.triggered.connect(self._quit)
-    self.menu.addAction(action_quit)
-    # Finish
-    self.menu.insertSeparator(action_settings)
     self.menu.aboutToShow.connect(self._update_menu)
     self.setContextMenu(self.menu)
 
@@ -93,25 +70,58 @@ class TrayIcon(QSystemTrayIcon):
     self.monitor.start()
 
   def _update_menu(self) -> None:
-    # Update toggle icons
-    self.action_toggle_monitoring.setIcon(self.icon_unchecked if self.monitor.paused else self.icon_checked)
-    self.action_toggle_notifications.setIcon(self.icon_checked if self.notify else self.icon_unchecked)
-    # Update online streams in menu
-    all_actions = self.menu.actions()
-    for i in range(
-      all_actions.index(self.list_top_separator) + 1,
-      all_actions.index(self.action_toggle_monitoring)
-    ):
-      self.menu.removeAction(all_actions[i])
-    online_streams = self.monitor.get_online_streams()
-    for stream in online_streams:
+    self.menu.clear()
+    def create_stream_action(stream: Stream) -> QAction:
       action = QAction(stream.name, self.menu)
       if (pixmap := get_stream_icon(stream, 16)) is not None:
         action.setIcon(QIcon(pixmap))
+      action.setData(stream)
       action.triggered.connect(lambda checked, s=stream: self._launch_stream(s))
-      self.menu.insertAction(self.action_toggle_monitoring, action)
-    if len(online_streams) > 0:
-      self.menu.insertSeparator(self.action_toggle_monitoring)
+      return action
+    # add alive streams
+    alive_streams = self.monitor.get_alive_streams()
+    for stream in alive_streams:
+      self.menu.addAction(create_stream_action(stream))
+    if len(alive_streams) > 0:
+      self.menu.addSeparator()
+    # add always on streams
+    perma_streams = self.monitor.get_perma_streams()
+    for stream in perma_streams:
+      self.menu.addAction(create_stream_action(stream))
+    if len(perma_streams) > 0:
+      self.menu.addSeparator()
+    # add toggle monitoring
+    toggle_monitoring = QAction('Monitoring', self.menu)
+    toggle_monitoring.triggered.connect(self._toggle_monitoring)
+    if not self.monitor.paused:
+      toggle_monitoring.setIcon(self.icon_checked)
+    self.menu.addAction(toggle_monitoring)
+    # add toggle notifications
+    toggle_notifications = QAction('Notifications', self.menu)
+    toggle_notifications.triggered.connect(self._toggle_notifications)
+    if self.notify:
+      toggle_notifications.setIcon(self.icon_checked)
+    self.menu.addAction(toggle_notifications)
+    # add click action toggle submenu
+    def set_tray_action(action: TrayIconAction) -> None:
+      self.click = action
+    tray_click_menu = self.menu.addMenu('Click Action')
+    for tray_action in TrayIconAction:
+      action = QAction(tray_action.display_name, tray_click_menu)
+      action.triggered.connect(lambda checked, ta=tray_action: set_tray_action(ta))
+      if tray_action == self.click:
+        action.setIcon(self.icon_checked)
+      tray_click_menu.addAction(action)
+    # Settings
+    self.menu.addSeparator()
+    action_settings = QAction('Settings', self.menu)
+    action_settings.triggered.connect(self._open_settings)
+    self.menu.addAction(action_settings)
+    # Quit
+    self.menu.addSeparator()
+    action_quit = QAction('Quit', self.menu)
+    action_quit.triggered.connect(self._quit)
+    self.menu.addAction(action_quit)
 
   def _update_icon(self) -> None:
     has_lives = self.monitor.live_streams_count() > 0
@@ -129,6 +139,42 @@ class TrayIcon(QSystemTrayIcon):
       count = self.monitor.live_streams_count()
       tooltip.append(f'{count} stream(s) online')
     self.setToolTip('\n'.join(tooltip))
+
+  def _launch_stream(self, stream: Stream) -> None:
+    launch_process(build_sl_command(self.cfg, stream))
+
+  def _on_tray_action(self, reason: QSystemTrayIcon.ActivationReason) -> None:
+    if reason != QSystemTrayIcon.ActivationReason.Trigger:
+      pass
+    elif self.click == TrayIconAction.OPEN_URL:
+      self._open_url()
+    elif self.click == TrayIconAction.OPEN_CONFIG:
+      self._open_settings()
+    elif self.click == TrayIconAction.TOGGLE_MONITORING:
+      self._toggle_monitoring()
+    elif self.click == TrayIconAction.TOGGLE_NOTIFICATIONS:
+      self._toggle_notifications()
+
+  def _on_stream_online(self, stream: Stream) -> None:
+    self._update_icon()
+    if self.notify and (stream.notify is None or stream.notify) and self.supportsMessages():
+      self.showMessage(
+        'Stream Online',
+        f'{stream.name} is now live on {stream.type}!',
+        QSystemTrayIcon.MessageIcon.Information,
+        5000
+      )
+
+  def _toggle_monitoring(self) -> None:
+    if self.monitor.paused:
+      self.monitor.resume()
+    else:
+      self.monitor.pause()
+    self._update_icon()
+
+  def _toggle_notifications(self) -> None:
+    self.notify = not self.notify
+    self._update_icon()
 
   def _open_url(self) -> None:
     stream_url = _check_url(pyperclip.paste().strip())  ## QApplication.clipboard() doesn't work in this class, idk why
@@ -151,20 +197,6 @@ class TrayIcon(QSystemTrayIcon):
       stream = Stream(url=stream_url, type=stream_type, name=stream_name)
     self._launch_stream(stream)
 
-  def _launch_stream(self, stream: Stream) -> None:
-    launch_process(build_sl_command(self.cfg, stream))
-
-  def _toggle_monitoring(self) -> None:
-    if self.monitor.paused:
-      self.monitor.resume()
-    else:
-      self.monitor.pause()
-    self._update_icon()
-
-  def _toggle_notifications(self) -> None:
-    self.notify = not self.notify
-    self._update_icon()
-
   def _open_settings(self) -> None:
     self.settings.show()
     self.settings.raise_()
@@ -175,28 +207,6 @@ class TrayIcon(QSystemTrayIcon):
     self.monitor.wait()
     self.monitor.quit()
     QApplication.quit()
-
-  def _on_tray_icon_action(self, reason: QSystemTrayIcon.ActivationReason) -> None:
-    if reason != QSystemTrayIcon.ActivationReason.Trigger:
-      pass
-    elif self.cfg.tray_icon_action == TrayIconAction.OPEN_URL:
-      self._open_url()
-    elif self.cfg.tray_icon_action == TrayIconAction.OPEN_CONFIG:
-      self._open_settings()
-    elif self.cfg.tray_icon_action == TrayIconAction.TOGGLE_MONITORING:
-      self._toggle_monitoring()
-    elif self.cfg.tray_icon_action == TrayIconAction.TOGGLE_NOTIFICATIONS:
-      self._toggle_notifications()
-
-  def _on_stream_online(self, stream: Stream) -> None:
-    self._update_icon()
-    if self.notify and (stream.notify is None or stream.notify) and self.supportsMessages():
-      self.showMessage(
-        'Stream Online',
-        f'{stream.name} is now live on {stream.type}!',
-        QSystemTrayIcon.MessageIcon.Information,
-        5000
-      )
 
   def _on_stream_offline(self, stream: Stream) -> None:
     self._update_icon()

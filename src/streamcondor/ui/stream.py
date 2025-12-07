@@ -124,21 +124,36 @@ class StreamDialog(QDialog):
     self.text_sl_args.setPlaceholderText('Enter custom streamlink arguments...')
     self.text_sl_args.setFont(MONOSPACE_FONT)
     self.text_sl_args.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
-    return self.text_sl_args
+    layout = QVBoxLayout()
+    layout.addWidget(self.text_sl_args)
+    widget = QWidget()
+    widget.setLayout(layout)
+    return widget
 
   def _create_mp_args_tab(self) -> QWidget:
     self.text_mp_args = QTextEdit()
     self.text_mp_args.setPlaceholderText('Enter custom media player arguments...')
     self.text_mp_args.setFont(MONOSPACE_FONT)
     self.text_mp_args.setLineWrapMode(QTextEdit.LineWrapMode.WidgetWidth)
-    return self.text_mp_args
+    layout = QVBoxLayout()
+    layout.addWidget(self.text_mp_args)
+    widget = QWidget()
+    widget.setLayout(layout)
+    return widget
 
   def _create_preview_tab(self) -> QWidget:
+    top_label = QLabel('This is the command that will be executed to launch the stream:')
+    top_label.setStyleSheet('font-size: 10pt;')
     self.text_preview = QTextEdit()
     self.text_preview.setReadOnly(True)
     self.text_preview.setFont(MONOSPACE_FONT)
     self.text_preview.setLineWrapMode(QTextEdit.LineWrapMode.NoWrap)
-    return self.text_preview
+    layout = QVBoxLayout()
+    layout.addWidget(top_label)
+    layout.addWidget(self.text_preview)
+    widget = QWidget()
+    widget.setLayout(layout)
+    return widget
 
   def _on_tab_changed(self, index: int) -> None:
     self.sl_args_hint.setVisible(self.tabs.widget(index) == self.tab_sl_args)

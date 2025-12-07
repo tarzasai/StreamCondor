@@ -19,8 +19,8 @@ class TestConfigurationLoadSave(unittest.TestCase):
             'check_interval_mins': 60,
             'default_streamlink_args': '',
             'default_quality': 'best',
-            'default_media_player': '',
-            'default_media_player_args': '',
+            'default_player': '',
+            'default_player_args': '',
             'tray_icon_action': 'open_config',
             'streams': {
                 'https://example.com/stream': {

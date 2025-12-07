@@ -74,7 +74,8 @@ def test_update_menu_with_favicons(app, tmp_path):
         try:
             s1 = Stream(url='https://a', name='A', type='youtube')
             s2 = Stream(url='https://b', name='B', type='youtube')
-            ti.monitor.get_online_streams = MagicMock(return_value=[s1, s2])
+            ti.monitor.get_alive_streams = MagicMock(return_value=[s1, s2])
+            ti.monitor.get_perma_streams = MagicMock(return_value=[])
             ti._update_menu()
             texts = [a.text() for a in ti.menu.actions() if a.text()]
             assert 'A' in texts and 'B' in texts
@@ -95,20 +96,20 @@ def test_on_tray_icon_action_calls_methods(app, tmp_path):
              patch.object(ti, '_open_url') as mock_openurl, \
              patch.object(ti, '_toggle_monitoring') as mock_togglemon, \
              patch.object(ti, '_toggle_notifications') as mock_togglenot:
-            ti.cfg.tray_icon_action = TrayIconAction.OPEN_CONFIG
-            ti._on_tray_icon_action(QSystemTrayIcon.ActivationReason.Trigger)
+            ti.click = TrayIconAction.OPEN_CONFIG
+            ti._on_tray_action(QSystemTrayIcon.ActivationReason.Trigger)
             mock_settings.assert_called()
 
-            ti.cfg.tray_icon_action = TrayIconAction.OPEN_URL
-            ti._on_tray_icon_action(QSystemTrayIcon.ActivationReason.Trigger)
+            ti.click = TrayIconAction.OPEN_URL
+            ti._on_tray_action(QSystemTrayIcon.ActivationReason.Trigger)
             mock_openurl.assert_called()
 
-            ti.cfg.tray_icon_action = TrayIconAction.TOGGLE_MONITORING
-            ti._on_tray_icon_action(QSystemTrayIcon.ActivationReason.Trigger)
+            ti.click = TrayIconAction.TOGGLE_MONITORING
+            ti._on_tray_action(QSystemTrayIcon.ActivationReason.Trigger)
             mock_togglemon.assert_called()
 
-            ti.cfg.tray_icon_action = TrayIconAction.TOGGLE_NOTIFICATIONS
-            ti._on_tray_icon_action(QSystemTrayIcon.ActivationReason.Trigger)
+            ti.click = TrayIconAction.TOGGLE_NOTIFICATIONS
+            ti._on_tray_action(QSystemTrayIcon.ActivationReason.Trigger)
             mock_togglenot.assert_called()
     finally:
         ti.monitor.stop(); ti.monitor.wait(); ti.monitor.quit()

@@ -30,7 +30,8 @@ def test_tray_update_menu_adds_online_streams(app, tmp_path):
         ti = TrayIcon(None, str(cfg.config_path))
         # inject fake online streams into monitor
         fake = Stream(url='https://x', name='X', type='youtube')
-        ti.monitor.get_online_streams = MagicMock(return_value=[fake])
+        ti.monitor.get_alive_streams = MagicMock(return_value=[fake])
+        ti.monitor.get_perma_streams = MagicMock(return_value=[])
         ti._update_menu()
         actions = [a.text() for a in ti.menu.actions() if a.text()]
         assert 'X' in actions

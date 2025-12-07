@@ -113,7 +113,7 @@ def launch_process(command: str | list[str]) -> bool:
     return False
 
 
-def build_sl_command(cfg: Configuration, stream: Stream) -> list[str]:
+def build_sl_command(cfg: Configuration, stream: Stream, alt_player: bool = False) -> list[str]:
   '''
   Build the Streamlink command merging stream-specific settings with global defaults.
   '''
@@ -125,11 +125,11 @@ def build_sl_command(cfg: Configuration, stream: Stream) -> list[str]:
   custom_sl_args = (stream.sl_args or '').replace('$SC.name', stream.name or '').replace('$SC.type', stream.type or '')
   merged_args = _merge_args_strings(default_sl_args, custom_sl_args)
   # The media player is optional
-  player = stream.player or cfg.default_media_player
+  player = cfg.alternate_player if alt_player and cfg.alternate_player else (stream.player or cfg.default_player)
   if player:
     merged_args += f" --player {player}"
   # Stream's player args override defaults (too complex to merge, even IF default and custom player are the same)
-  player_args = stream.mp_args or cfg.default_media_player_args
+  player_args = cfg.alternate_player_args if alt_player and cfg.alternate_player_args else (stream.mp_args or cfg.default_player_args)
   if player_args:
     merged_args += f" --player-args {player_args}"
   #

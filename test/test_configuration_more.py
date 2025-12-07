@@ -12,8 +12,8 @@ class TestConfigurationMore(unittest.TestCase):
             'default_notify': False,
             'default_streamlink_args': '',
             'default_quality': 'best',
-            'default_media_player': '',
-            'default_media_player_args': '',
+            'default_player': '',
+            'default_player_args': '',
             'tray_icon_color': TrayIconColor.WHITE.value,
             'tray_icon_action': TrayIconAction.NOTHING.value,
             'streams': {}
@@ -26,8 +26,8 @@ class TestConfigurationMore(unittest.TestCase):
             cfg.default_notify = True
             cfg.default_streamlink_args = '--flag'
             cfg.default_quality = '720p'
-            cfg.default_media_player = 'vlc'
-            cfg.default_media_player_args = '--no-border'
+            cfg.default_player = 'vlc'
+            cfg.default_player_args = '--no-border'
             cfg.tray_icon_color = TrayIconColor.BLACK
             cfg.tray_icon_action = TrayIconAction.OPEN_URL
             cfg.check_interval_mins = 123
@@ -36,8 +36,8 @@ class TestConfigurationMore(unittest.TestCase):
             self.assertTrue(cfg.default_notify)
             self.assertEqual(cfg.default_streamlink_args, '--flag')
             self.assertEqual(cfg.default_quality, '720p')
-            self.assertEqual(cfg.default_media_player, 'vlc')
-            self.assertEqual(cfg.default_media_player_args, '--no-border')
+            self.assertEqual(cfg.default_player, 'vlc')
+            self.assertEqual(cfg.default_player_args, '--no-border')
             self.assertEqual(cfg.tray_icon_color, TrayIconColor.BLACK)
             self.assertEqual(cfg.tray_icon_action, TrayIconAction.OPEN_URL)
             self.assertEqual(cfg.check_interval_mins, 123)

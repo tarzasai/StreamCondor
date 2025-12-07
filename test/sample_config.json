@@ -4,7 +4,7 @@
   "default_notify": true,
   "default_streamlink_args": "--title \"{author} - {title}\" --retry-max 5 --stream-segment-timeout 20",
   "default_quality": "720p",
-  "default_media_player": "mpv",
+  "default_player": "mpv",
   "tray_icon_color": "white",
   "tray_icon_action": "open_config",
   "streams": {

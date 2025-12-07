@@ -8,8 +8,8 @@ import streamcondor.slhelper as slhelper
 class DummyCfg:
     def __init__(self):
         self.default_streamlink_args = '--flag'
-        self.default_media_player = 'mpv'
-        self.default_media_player_args = '--no-border'
+        self.default_player = 'mpv'
+        self.default_player_args = '--no-border'
         self.default_quality = 'best'
 
 class TestSlHelper(unittest.TestCase):

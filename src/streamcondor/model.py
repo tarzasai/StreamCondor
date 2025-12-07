@@ -79,8 +79,10 @@ class ConfigModel(BaseModelWithEmptyToNone):
   default_notify: bool = Field(default=False, description="Default notification setting for streams")
   default_streamlink_args: str | None = Field(default="--title \"{author} - {title}\"", description="Default Streamlink arguments")
   default_quality: str | None = Field(default="best", description="Default stream quality")
-  default_media_player: str | None = Field(default="", description="Default media player command")
-  default_media_player_args: str | None = Field(default="", description="Default media player arguments")
+  default_player: str | None = Field(default="", description="Default media player command")
+  default_player_args: str | None = Field(default="", description="Default media player arguments")
+  alternate_player: str | None = Field(default=None, description="Alternate media player command")
+  alternate_player_args: str | None = Field(default=None, description="Alternate media player arguments")
   tray_icon_color: TrayIconColor = Field(default=TrayIconColor.WHITE, description="Base color of the tray icon")
   tray_icon_action: TrayIconAction = Field(default=TrayIconAction.NOTHING, description="Action on tray icon left-click")
   streams: dict[str, Stream] = Field(default_factory=dict, description="Configured streams")
@@ -171,20 +173,36 @@ class Configuration(QObject):
     self.set('default_quality', value)
 
   @property
-  def default_media_player(self) -> str:
-    return self._cfg.default_media_player
+  def default_player(self) -> str:
+    return self._cfg.default_player
 
-  @default_media_player.setter
-  def default_media_player(self, value: str) -> None:
-    self.set('default_media_player', value)
+  @default_player.setter
+  def default_player(self, value: str) -> None:
+    self.set('default_player', value)
 
   @property
-  def default_media_player_args(self) -> str:
-    return self._cfg.default_media_player_args
+  def default_player_args(self) -> str:
+    return self._cfg.default_player_args
 
-  @default_media_player_args.setter
-  def default_media_player_args(self, value: str) -> None:
-    self.set('default_media_player_args', value)
+  @default_player_args.setter
+  def default_player_args(self, value: str) -> None:
+    self.set('default_player_args', value)
+
+  @property
+  def alternate_player(self) -> str:
+    return self._cfg.alternate_player
+
+  @alternate_player.setter
+  def alternate_player(self, value: str) -> None:
+    self.set('alternate_player', value)
+
+  @property
+  def alternate_player_args(self) -> str:
+    return self._cfg.alternate_player_args
+
+  @alternate_player_args.setter
+  def alternate_player_args(self, value: str) -> None:
+    self.set('alternate_player_args', value)
 
   @property
   def plugin_auth_args(self) -> list[str]:

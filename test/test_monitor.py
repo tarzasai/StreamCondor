@@ -85,11 +85,11 @@ class TestMonitor(unittest.TestCase):
         cfgobj = Configuration(Path(tmp.name))
         mon = StreamMonitor(cfgobj)
         # No streams online initially
-        self.assertEqual(mon.get_online_streams(), [])
+        self.assertEqual(mon.get_alive_streams(), [])
         # Set statuses and verify sorting by type then name
         mon.stream_status['https://y.example/'] = True
         mon.stream_status['https://x.example/'] = True
-        online = mon.get_online_streams()
+        online = mon.get_alive_streams()
         self.assertEqual([s.url for s in online], ['https://x.example/', 'https://y.example/'])
         # Pause/resume/stop simple checks
         mon.pause()

@@ -90,6 +90,10 @@ class StreamMonitor(QThread):
         if stream.notify and self.stream_status.get(stream.url, False)
     )
 
-  def get_online_streams(self) -> list[Stream]:
-    online = [stream for stream in self.cfg.streams.values() if self.stream_status.get(stream.url, False)]
-    return sorted(online, key=lambda s: (s.type or '', s.name or s.url or ''))
+  def get_perma_streams(self) -> list[Stream]:
+    perma = [stream for stream in self.cfg.streams.values() if stream.always_on]
+    return sorted(perma, key=lambda s: (s.type or '', s.name or s.url or ''))
+
+  def get_alive_streams(self) -> list[Stream]:
+    alive = [stream for stream in self.cfg.streams.values() if not stream.always_on and self.stream_status.get(stream.url, False)]
+    return sorted(alive, key=lambda s: (s.type or '', s.name or s.url or ''))
