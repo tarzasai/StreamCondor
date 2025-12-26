@@ -132,11 +132,16 @@ def build_sl_command(cfg: Configuration, stream: Stream, alt_player: bool = Fals
   player_args = cfg.alternate_player_args if alt_player and cfg.alternate_player_args else (stream.mp_args or cfg.default_player_args)
   if player_args:
     merged_args += f" --player-args {player_args}"
-  #
+  # Quality: both the default and the stream-specific quality that we save in configuration may not be valid,
+  # because every stream has its own set, and if our string doesn't match one of the available qualities the
+  # command will fail (i.e. "720p60" instead of "720p"). Checking every time would be too much overhead, so
+  # we just append "best" as a fallback. Eh oh.
+  quality = filter(None, [stream.quality or cfg.default_quality, 'best'])
+  # Build final command list
   command = ['streamlink']
   command.extend(_split_args_with_values(merged_args))
   command.append(url)
-  command.append(stream.quality or cfg.default_quality)
+  command.append(','.join(quality))  ## this may ends up as "best,best", but streamlink doesn't care
   return command
 
 

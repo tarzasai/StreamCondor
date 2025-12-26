@@ -39,6 +39,16 @@ class StreamDialog(QDialog):
     self._load_stream_data()
     self._connect_signals()
 
+  def _can_save(self) -> bool:
+    url = self.text_url.text().strip()
+    name = self.text_name.text().strip()
+    stype = self.text_type.text().strip()
+    if not url or not name or not stype:
+      return False
+    if self.is_clone:
+      return url != self.original_url
+    return True
+
   def _init_ui(self) -> None:
     self.setWindowFlag(Qt.WindowType.WindowMinimizeButtonHint, False) ## not working in Linux
     self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False) ## not working in Linux
@@ -206,17 +216,14 @@ class StreamDialog(QDialog):
   def _on_url_changed(self, url: str) -> None:
     if not url:
       self.text_type.clear()
-      self._toggle_save_state(False)
-      return
-    if self.is_clone:
-      self._toggle_save_state(url.strip() != self.original_url)
     else:
-      self._toggle_save_state(True)
-    self._refresh_stream_info()
+      self._refresh_stream_info()
+    self._toggle_save_state(self._can_save())
 
   def _on_name_changed(self, name: str) -> None:
     self._update_title()
     self._update_preview()
+    self._toggle_save_state(self._can_save())
 
   def _on_alwayson_changed(self, state: Qt.CheckState) -> None:
     if state == Qt.CheckState.Checked:
@@ -235,7 +242,8 @@ class StreamDialog(QDialog):
         self._update_preview()
         get_stream_icon(self.get_stream(), size=16)  ## Preload favicon
       except Exception as e:
-        self._toggle_save_state(False)
+        self.text_type.clear()
+        self._toggle_save_state(self._can_save())
         raise e
 
   def _update_title(self) -> None:
