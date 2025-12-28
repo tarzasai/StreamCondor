@@ -53,13 +53,15 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "Warning: You have uncommitted changes. Please commit them first."
     exit 1
   fi
-  
+
   # Create annotated tag
   git tag -a "$NEW_VERSION" -m "Release $NEW_VERSION"
   echo "✓ Created tag $NEW_VERSION"
-  echo ""
-  echo "To push the tag to remote, run:"
-  echo "  git push origin $NEW_VERSION"
+
+  # Push the tag to remote
+  echo "Pushing tag to remote..."
+  git push origin "$NEW_VERSION"
+  echo "✓ Pushed tag $NEW_VERSION to remote"
 else
   echo "Cancelled."
   exit 1
