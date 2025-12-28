@@ -139,21 +139,20 @@ class StreamListModel(QAbstractItemModel):
     if not index.isValid():
       return None
     node = index.internalPointer()
+    if role == Qt.ItemDataRole.UserRole:
+      return node
     column = index.column()
-
     if role == Qt.ItemDataRole.DisplayRole:
-      if node.is_group():
-        if column == 0:
-          return node.data.capitalize()
-      elif node.is_stream():
+      if column == 0:
+        return node.data.capitalize() if node.is_group() else node.data.name
+      if node.is_stream():
         stream = node.data
-        if column == 0:
-          return stream.name
         if column == 1:
           return stream.quality or self.cfg.default_quality
         if column == 2:
           return stream.player or self.cfg.default_player
-    elif role == Qt.ItemDataRole.DecorationRole and column == 0:
+      return None
+    if role == Qt.ItemDataRole.DecorationRole and column == 0:
       if node.is_group():
         stream = node.children[0].data
         pixmap = get_stream_icon(stream, 16)
@@ -163,35 +162,35 @@ class StreamListModel(QAbstractItemModel):
         if stream.always_on:
           return QIcon.fromTheme('network-wireless', QIcon.fromTheme('network-transmit-receive'))
       return None
-    elif role == Qt.ItemDataRole.CheckStateRole and column == 0:
+    if role == Qt.ItemDataRole.CheckStateRole and column == 0:
       if node.is_stream():
         stream = node.data
-        if stream.always_on:
-          return None
-        return Qt.CheckState.PartiallyChecked if stream.notify is None \
-          else Qt.CheckState.Checked if stream.notify else Qt.CheckState.Unchecked
+        return None if stream.always_on \
+          else Qt.CheckState.PartiallyChecked if stream.notify is None \
+          else Qt.CheckState.Checked if stream.notify \
+          else Qt.CheckState.Unchecked
       return None
-    elif role == Qt.ItemDataRole.UserRole:
-      return node
     return None
 
+  def getData(self, index: QModelIndex) -> StreamTreeNode | None:
+    return None if not index.isValid() else index.internalPointer()
+
   def setData(self, index: QModelIndex, value, role: int) -> bool:
-    if not index.isValid():
+    node = self.getData(index)
+    if not (node and node.is_stream() and role == Qt.ItemDataRole.CheckStateRole):
       return False
-    node = index.internalPointer()
-    if role == Qt.ItemDataRole.CheckStateRole and node.is_stream(): # Only handle stream nodes
-      stream = node.data
-      current_value = stream.notify
-      if current_value is True:
-        stream.notify = False # Checked -> Unchecked
-      elif current_value is False:
-        stream.notify = None # Unchecked -> PartiallyChecked (None)
-      else:
-        stream.notify = True # PartiallyChecked (None) -> Checked
-      self.cfg.save()
-      self.dataChanged.emit(index, index, [Qt.ItemDataRole.CheckStateRole])
-      return True
-    return False
+    stream = node.data
+    # the value argument seems only useful to toggle True/False, so we'll cycle through our three states
+    is_true = stream.notify
+    if is_true is None:
+      stream.notify = True # PartiallyChecked (None) -> Checked
+    elif is_true:
+      stream.notify = False # Checked -> Unchecked
+    else:
+      stream.notify = None # Unchecked -> PartiallyChecked (None)
+    self.cfg.save()
+    self.dataChanged.emit(index, index, [Qt.ItemDataRole.CheckStateRole])
+    return True
 
   def flags(self, index: QModelIndex) -> Qt.ItemFlag:
     if not index.isValid():
@@ -480,7 +479,7 @@ class SettingsWindow(QWidget):
       self.btn_run_defp.setVisible(False)
       self.btn_run_altp.setVisible(False)
       return
-    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    node = self.stream_model.getData(index)
     if not node or node.is_group():
       self.btn_edit.setEnabled(False)
       self.btn_clone.setEnabled(False)
@@ -500,7 +499,7 @@ class SettingsWindow(QWidget):
     for row in range(self.stream_model.rowCount()):
       index = self.stream_model.index(row, 0)
       if self.stream_list.isExpanded(index):
-        node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+        node = self.stream_model.getData(index)
         if node and node.is_group():
           expanded_groups.add(node.data)
     # Config is already saved by property setters
@@ -508,7 +507,7 @@ class SettingsWindow(QWidget):
     # Restore Treeview expansion state
     for row in range(self.stream_model.rowCount()):
       index = self.stream_model.index(row, 0)
-      node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+      node = self.stream_model.getData(index)
       if node and node.is_group():
         if node.data in expanded_groups:
           self.stream_list.expand(index)
@@ -530,7 +529,7 @@ class SettingsWindow(QWidget):
     index = self.stream_list.currentIndex()
     if not index.isValid():
       return
-    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    node = self.stream_model.getData(index)
     if not node or node.is_group():
       return
     dialog = StreamDialog(
@@ -541,13 +540,15 @@ class SettingsWindow(QWidget):
     if dialog.exec():
       updated_stream = dialog.get_stream()
       self.cfg.set_stream(updated_stream)
+      if not dialog.is_clone and updated_stream.url != node.data.url:
+        self.cfg.del_stream(node.data)  ## URL changed, remove old stream entry
       self._reload_treeview()
 
   def _clone_stream(self) -> None:
     index = self.stream_list.currentIndex()
     if not index.isValid():
       return
-    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    node = self.stream_model.getData(index)
     if not node or node.is_group():
       return
     dialog = StreamDialog(
@@ -565,7 +566,7 @@ class SettingsWindow(QWidget):
     index = self.stream_list.currentIndex()
     if not index.isValid():
       return
-    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    node = self.stream_model.getData(index)
     if not node or node.is_group():
       return
     stream = node.data
@@ -583,7 +584,7 @@ class SettingsWindow(QWidget):
     index = self.stream_list.currentIndex()
     if not index.isValid():
       return
-    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    node = self.stream_model.getData(index)
     if not node or node.is_group():
       return
     launch_process(build_sl_command(self.cfg, node.data))
@@ -592,7 +593,7 @@ class SettingsWindow(QWidget):
     index = self.stream_list.currentIndex()
     if not index.isValid():
       return
-    node = self.stream_model.data(index, Qt.ItemDataRole.UserRole)
+    node = self.stream_model.getData(index)
     if not node or node.is_group():
       return
     launch_process(build_sl_command(self.cfg, node.data, True))
