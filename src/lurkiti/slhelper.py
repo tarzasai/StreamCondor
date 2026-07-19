@@ -173,7 +173,7 @@ def build_launch_command(cfg: Configuration, stream: Stream, alt_player: bool = 
     clippiti_path = cfg.clippiti_path or shutil.which('clippiti')
     if clippiti_path:
       return _build_clippiti_command(cfg, stream, alt_player, clippiti_path)
-  # Fallback to Streamlink  
+  # Fallback to Streamlink
   return _build_streamlink_command(cfg, stream, alt_player, player)
 
 
@@ -218,7 +218,9 @@ def _build_streamlink_command(cfg: Configuration, stream: Stream, alt_player: bo
 def _build_clippiti_command(cfg: Configuration, stream: Stream, alt_player: bool, clippiti_path: str) -> list[str]:
   '''
   Build the Clippiti command merging stream-specific settings with global defaults.
-  Clippiti uses a different argument structure than Streamlink.
+  Clippiti uses a different argument structure than Streamlink: Streamlink arguments
+  are passed after a '--' separator (as individual tokens), while Clippiti-specific
+  arguments (like --mpv) come before it.
   Player args are only included if the configured player is mpv (the only player clippiti understands).
   '''
   url = stream.url
@@ -232,10 +234,6 @@ def _build_clippiti_command(cfg: Configuration, stream: Stream, alt_player: bool
   quality = ','.join(filter(None, [stream.quality or cfg.default_quality, 'best']))
   # Build Clippiti command
   command = [clippiti_path, url, quality]
-  # Add streamlink args if present
-  if merged_sl_args.strip():
-    command.append('--sl')
-    command.append(merged_sl_args.strip())
   # Determine the player whose args we'd be using
   relevant_player = cfg.alternate_player if alt_player and cfg.alternate_player else cfg.default_player
   # Only add mpv args if the relevant player is actually mpv (the only player clippiti understands)
@@ -248,6 +246,10 @@ def _build_clippiti_command(cfg: Configuration, stream: Stream, alt_player: bool
       resolved_player_args = player_args.replace('$SC.name', sc_name).replace('$SC.type', sc_type)
       command.append('--mpv')
       command.append(resolved_player_args)
+  # Streamlink args are forwarded after a '--' separator as individual tokens
+  if merged_sl_args.strip():
+    command.append('--')
+    command.extend(_split_args_with_values(merged_sl_args))
   return command
 
 
@@ -255,11 +257,11 @@ def _remove_args_from_string(args_string: str, args_to_remove: list[str]) -> str
   '''
   Remove specified arguments from a command-line arguments string.
   Handles both flags and options with values.
-  
+
   Args:
     args_string: String containing command-line arguments
     args_to_remove: List of argument names to remove (with dashes)
-  
+
   Returns:
     String with specified arguments removed
   '''

@@ -143,14 +143,14 @@ class TestSlHelper(unittest.TestCase):
             mp_args=None
         )
         cmd = slhelper.build_launch_command(cfg, s)
-        self.assertIn('--sl', cmd)
-        # The --sl argument should contain the merged streamlink args
-        sl_idx = cmd.index('--sl')
-        sl_args = cmd[sl_idx + 1]
-        self.assertIn('--retry-max', sl_args)
-        self.assertIn('5', sl_args)
-        self.assertIn('--stream-segment-timeout', sl_args)
-        self.assertIn('--http-no-ssl-verify', sl_args)
+        self.assertIn('--', cmd)
+        # Streamlink args are forwarded as individual tokens after the '--' separator
+        sep_idx = cmd.index('--')
+        sl_tokens = cmd[sep_idx + 1:]
+        self.assertIn('--retry-max', sl_tokens)
+        self.assertIn('5', sl_tokens)
+        self.assertIn('--stream-segment-timeout', sl_tokens)
+        self.assertIn('--http-no-ssl-verify', sl_tokens)
 
     def test_build_launch_command_clippiti_removes_title_from_streamlink_args(self):
         cfg = DummyCfg()
@@ -167,10 +167,10 @@ class TestSlHelper(unittest.TestCase):
             mp_args=None
         )
         cmd = slhelper.build_launch_command(cfg, s)
-        sl_idx = cmd.index('--sl')
-        sl_args = cmd[sl_idx + 1]
-        self.assertNotIn('--title', sl_args)
-        self.assertIn('--retry-max', sl_args)
+        sep_idx = cmd.index('--')
+        sl_tokens = cmd[sep_idx + 1:]
+        self.assertNotIn('--title', sl_tokens)
+        self.assertIn('--retry-max', sl_tokens)
 
     def test_build_launch_command_clippiti_includes_mpv_args(self):
         cfg = DummyCfg()
