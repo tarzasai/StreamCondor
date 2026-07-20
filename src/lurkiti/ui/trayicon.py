@@ -8,7 +8,8 @@ from PyQt6.QtWidgets import QSystemTrayIcon, QMenu, QInputDialog, QApplication
 
 from lurkiti.model import Configuration, TrayIconStatus, TrayIconAction, Stream
 from lurkiti.monitor import StreamMonitor
-from lurkiti.slhelper import is_stream_live, launch_process, build_launch_command
+from lurkiti.session import is_stream_live
+from lurkiti.command import launch_process, build_launch_command
 from lurkiti.favicons import get_stream_icon
 from lurkiti.ui.settings import SettingsWindow
 
@@ -176,7 +177,7 @@ class TrayIcon(QSystemTrayIcon):
         return
     stream = self.cfg.streams.get(stream_url)
     if stream is None:
-      stream_type, is_live = is_stream_live(stream_url, self.cfg.plugin_auth_args)  ## can throw NoPluginError
+      stream_type, is_live = is_stream_live(stream_url)  ## can throw NoPluginError
       if not is_live:
         self.showMessage(
           'Stream Offline',

@@ -6,7 +6,7 @@ This project provides centralized helpers for mocking Streamlink (`sls`) and the
 Files
 - `test/test_helpers.py` — Context managers:
   - `mock_sls(streams_return=None, resolve_return=None, resolve_side_effect=None)`
-    to patch `lurkiti.slhelper.sls`.
+    to patch `lurkiti.session.sls`.
   - `mock_is_stream_live(return_value=None, side_effect=None)`
     to patch `lurkiti.monitor.is_stream_live` and
     `lurkiti.ui.trayicon.is_stream_live` together.

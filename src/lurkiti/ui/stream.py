@@ -10,7 +10,8 @@ from PyQt6.QtGui import QFont, QIcon
 
 from lurkiti.model import Configuration, Stream
 from lurkiti.favicons import get_stream_icon
-from lurkiti.slhelper import sls, build_launch_command
+from lurkiti.session import sls
+from lurkiti.command import build_launch_command
 
 SL_ARGS_HINT = '''
 <html><head/><body>

@@ -59,12 +59,6 @@ class Geometry(BaseModel):
   height: int = Field(..., description="Height of the application window")
 
 
-DEFAULT_PLUGIN_AUTH_ARGS = [
-  "username",
-  "password"
-]
-
-
 class ConfigModel(BaseModelWithEmptyToNone):
   autostart_monitoring: bool = Field(default=False, description="Whether monitoring starts automatically")
   check_interval_mins: int = Field(default=5, description="Interval in minutes between stream checks")
@@ -79,7 +73,6 @@ class ConfigModel(BaseModelWithEmptyToNone):
   tray_icon_action: TrayIconAction = Field(default=TrayIconAction.NOTHING, description="Action on tray icon left-click")
   streams: dict[str, Stream] = Field(default_factory=dict, description="Configured streams")
   windows: dict[str, Geometry] | None = Field(default_factory=dict, description="Window geometry settings")
-  plugin_auth_args: list[str] | None = Field(default=DEFAULT_PLUGIN_AUTH_ARGS, description="List of required plugin arguments to check")
 
 
 class StreamState(BaseModel):
@@ -228,10 +221,6 @@ class Configuration(QObject):
   @clippiti_path.setter
   def clippiti_path(self, value: str | None) -> None:
     self.set('clippiti_path', value)
-
-  @property
-  def plugin_auth_args(self) -> list[str]:
-    return self._config.plugin_auth_args
 
   @property
   def streams(self) -> dict[str, Stream]:

@@ -11,7 +11,8 @@ from PyQt6.QtGui import QIcon, QFont
 from importlib.metadata import version, PackageNotFoundError
 
 from lurkiti.model import Configuration, Stream, TrayIconAction
-from lurkiti.slhelper import launch_process, build_launch_command
+from lurkiti.command import launch_process, build_launch_command
+from lurkiti.session import load_sl_user_stuff
 from lurkiti.favicons import get_stream_icon
 from lurkiti.ui.stream import StreamDialog
 
@@ -439,6 +440,18 @@ class SettingsWindow(QWidget):
     hint_sl_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
     hint_sl_args.setContentsMargins(0, 6, 0, 0)
     hint_sl_args.setToolTip('Click to open Streamlink command-line usage documentation')
+    # Reload Streamlink button: reloads config files and sideloaded plugins at runtime
+    self.btn_reload_streamlink = QPushButton('Reload configuration files')
+    self.btn_reload_streamlink.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+    self.btn_reload_streamlink.setToolTip(
+      'Reload Streamlink configuration files and sideloaded plugins without restarting Lurkiti'
+    )
+    self.btn_reload_streamlink.clicked.connect(self._reload_streamlink)
+    label_reload_streamlink = QLabel('Do this when you add a new plugin or change Streamlink or plugins config files.')
+    self.row_reload_streamlink = QHBoxLayout()
+    self.row_reload_streamlink.addWidget(self.btn_reload_streamlink)
+    self.row_reload_streamlink.addWidget(label_reload_streamlink)
+    self.row_reload_streamlink.addStretch()
     # Default media player
     self.text_default_player = QLineEdit()
     self.text_default_player.setPlaceholderText('e.g., mpv, vlc')
@@ -480,6 +493,7 @@ class SettingsWindow(QWidget):
     form_layout.addRow('Notifications', self.check_default_notify)
     form_layout.addRow('Icon left click', self.combo_tray_icon_action)
     form_layout.addRow('Default quality', self.combo_default_quality)
+    form_layout.addRow('Streamlink cfg', self.row_reload_streamlink)
     form_layout.addRow(hint_sl_args, self.text_default_sl_args)
     form_layout.addRow('Clippiti path', self.text_clippiti_path)
     form_layout.addRow('Default player', self.text_default_player)
@@ -494,6 +508,17 @@ class SettingsWindow(QWidget):
     self.text_default_player_args.setMinimumHeight(line_h)
     self.text_alternate_player_args.setMinimumHeight(line_h)
     return widget
+
+  def _reload_streamlink(self) -> None:
+    '''Reload Streamlink config files and sideloaded plugins without restarting.'''
+    try:
+      load_sl_user_stuff()
+    except Exception as err:
+      log.error(f'Error reloading Streamlink: {err}')
+      QMessageBox.warning(self, 'Reload Streamlink', f'Failed to reload Streamlink:\n{err}')
+      return
+    log.info('Reloaded Streamlink configuration and plugins')
+    QMessageBox.information(self, 'Reload Streamlink', 'Streamlink configuration and plugins reloaded.')
 
   def _create_about_tab(self) -> QWidget:
     widget = QWidget()

@@ -1,13 +1,10 @@
 import os
 import sys
 import logging
-import configparser
 import shlex
 import shutil
 import tempfile
 import subprocess
-from streamlink import Streamlink
-from PyQt6.QtCore import QStandardPaths
 
 from lurkiti.model import Configuration, Stream
 
@@ -21,87 +18,6 @@ LOG_LEVEL_MAP = {
 }
 
 log = logging.getLogger(__name__)
-
-sls = Streamlink(
-  plugins_builtin=True,
-)
-
-
-def load_sl_user_stuff() -> None:
-  # Load user config
-  config_dir = QStandardPaths.writableLocation(
-    QStandardPaths.StandardLocation.ConfigLocation
-  )
-  cfg_file = os.path.join(config_dir, 'streamlink', 'config')
-  if os.path.exists(cfg_file):
-    cfg = configparser.ConfigParser(strict=False)
-    with open(cfg_file) as ini:
-      cfg.read_string("[dummy]\n" + ini.read())
-    for key in cfg['dummy']:
-      try:
-        sls.set_option(key, cfg['dummy'][key])
-        log.debug(f"Loaded Streamlink config option {key}={cfg['dummy'][key]}")
-      except Exception as err:
-        log.error(f"Streamlink config option {key} error: {err}")
-  # Load user plugins
-  plugins_dir = QStandardPaths.writableLocation(
-    QStandardPaths.StandardLocation.GenericDataLocation
-  )
-  plugins_path = os.path.join(plugins_dir, 'streamlink', 'plugins')
-  if os.path.exists(plugins_path) and sls.plugins.load_path(plugins_path):
-    log.debug(f"Loaded Streamlink user plugins from {plugins_path}: {', '.join(sls.plugins.get_names())}")
-
-
-def is_stream_live(
-  stream_url: str,
-  auth_args: list[str],
-  global_args: str = None,
-  stream_args: str = None
-) -> tuple[str, bool]:
-  '''
-  Check if a stream is live using Streamlink, considering required plugin arguments.
-
-  Args:
-    url: Stream URL
-    req_args: List of required plugin argument names to check (e.g. username, password, etc)
-    global_args: Global Streamlink arguments string
-    stream_args: Stream-specific Streamlink arguments string
-
-  Returns:
-    Tuple of (plugin_name, is_live)
-  '''
-  # Let's try right away if it's a valid stream, otherwise it will raise NoPluginError
-  plugin_name, plugin_class, _ = sls.resolve_url(stream_url)
-  # Quick check; if streamlink find the streams we can return immediately
-  if len(sls.streams(stream_url)) > 0:
-    return plugin_name, True
-  # No streams? The plugin might require authentication
-  required_args = {}
-  arg_prefix = plugin_name + '-'
-  for k in plugin_class.arguments.keys():
-    if next((a for a in auth_args if a in k), None) is not None:
-      required_args[f"{arg_prefix}{k}"] = None
-  if not required_args:
-    return plugin_name, False # No authentication args for this plugin, I guess the stream is really offline
-  # We'll merge all the session options, global Streamlink args and stream-specific args in a single dict
-  # to find the values for the authentication arguments
-  all_args = sls.options.copy() | _parse_args_string(global_args) | _parse_args_string(stream_args)
-  for k in required_args.keys():
-    if k in all_args:
-      required_args[k] = all_args[k]
-    else:
-      raise ValueError(f"Required argument {k} for plugin {plugin_name} not found in merged args")
-  # We need to remove the prefix from the arguments before passing them to the plugin
-  plugin_args = {}
-  for k in list(required_args.keys()):
-    plugin_args[k[len(arg_prefix):]] = required_args[k]
-  log.debug(f"Checking stream {stream_url} with plugin {plugin_name} and args {plugin_args}")
-  # Now we can create the plugin instance passing the arguments with the correct names. Sadly this whole
-  # process is only needed by plugins that require authentication (e.g. BBCIplayer, maybe Twitch, etc)
-  plugin_instance = plugin_class(sls, stream_url, plugin_args)
-  streams = plugin_instance.streams()
-  log.debug(f"Stream {stream_url} has currently {len(streams)} available streams")
-  return plugin_name, bool(streams)
 
 
 def launch_process(command: str | list[str]) -> bool:
@@ -177,6 +93,18 @@ def build_launch_command(cfg: Configuration, stream: Stream, alt_player: bool = 
   return _build_streamlink_command(cfg, stream, alt_player, player)
 
 
+def _resolve_quality(cfg: Configuration, stream: Stream) -> str:
+  '''
+  Build the comma-separated quality priority list, appending "best" as a fallback.
+  Duplicates are dropped (order preserved) so it doesn't end up as "best,best".
+  '''
+  qualities = []
+  for q in [stream.quality or cfg.default_quality, 'best']:
+    if q and q not in qualities:
+      qualities.append(q)
+  return ','.join(qualities)
+
+
 def _build_streamlink_command(cfg: Configuration, stream: Stream, alt_player: bool, player: str) -> list[str]:
   '''
   Build the Streamlink command merging stream-specific settings with global defaults.
@@ -204,14 +132,14 @@ def _build_streamlink_command(cfg: Configuration, stream: Stream, alt_player: bo
   # because every stream has its own set, and if our string doesn't match one of the available qualities the
   # command will fail (i.e. "720p60" instead of "720p"). Checking every time would be too much overhead, so
   # we just append "best" as fallback. Eh oh.
-  quality = filter(None, [stream.quality or cfg.default_quality, 'best'])
+  quality = _resolve_quality(cfg, stream)
   # Build final command list
   command = ['streamlink']
   command.extend(_split_args_with_values(merged_args))
   if resolved_player_args:
     command.append(f'--player-args={resolved_player_args}')
   command.append(url)
-  command.append(','.join(quality))  ## this may ends up as "best,best", but streamlink doesn't care
+  command.append(quality)
   return command
 
 
@@ -231,7 +159,7 @@ def _build_clippiti_command(cfg: Configuration, stream: Stream, alt_player: bool
   # Remove --title and --player from streamlink args for Clippiti
   merged_sl_args = _remove_args_from_string(merged_sl_args, ['--title', '--player'])
   # Resolve quality
-  quality = ','.join(filter(None, [stream.quality or cfg.default_quality, 'best']))
+  quality = _resolve_quality(cfg, stream)
   # Build Clippiti command
   command = [clippiti_path, url, quality]
   # Determine the player whose args we'd be using
@@ -344,6 +272,7 @@ def _split_args_with_values(args_string: str) -> list[str]:
   if not args_string.strip():
     return []
   return shlex.split(args_string)
+
 
 def _merge_args_strings(default_args: str, override_args: str) -> str:
   """

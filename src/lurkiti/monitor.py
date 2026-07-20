@@ -3,7 +3,7 @@ import logging
 from PyQt6.QtCore import QThread, pyqtSignal
 
 from lurkiti.model import Configuration, Stream
-from lurkiti.slhelper import is_stream_live
+from lurkiti.session import is_stream_live
 
 log = logging.getLogger(__name__)
 
@@ -52,7 +52,6 @@ class StreamMonitor(QThread):
     try:
       _, is_online = is_stream_live(
         stream.url,
-        self.cfg.plugin_auth_args,
         self.cfg.default_streamlink_args,
         stream.sl_args
       )

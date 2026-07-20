@@ -3,7 +3,7 @@ import subprocess
 from unittest.mock import patch, MagicMock
 from pathlib import Path
 from lurkiti.model import Configuration, Stream
-import lurkiti.slhelper as slhelper
+import lurkiti.command as slhelper
 
 class DummyCfg:
     def __init__(self):
@@ -88,14 +88,14 @@ class TestSlHelper(unittest.TestCase):
         self.assertIn('--player-args=--force-window=immediate', cmd)
         self.assertNotIn('--player-args=--fullscreen', cmd)
 
-    @patch('lurkiti.slhelper.subprocess.Popen')
+    @patch('lurkiti.command.subprocess.Popen')
     def test_launch_process_success(self, mock_popen):
         mock_popen.return_value = MagicMock()
         ok = slhelper.launch_process(['echo', 'hi'])
         self.assertTrue(ok)
         mock_popen.assert_called()
 
-    @patch('lurkiti.slhelper.subprocess.Popen')
+    @patch('lurkiti.command.subprocess.Popen')
     def test_launch_process_keeps_list_tokens(self, mock_popen):
         mock_popen.return_value = MagicMock()
         ok = slhelper.launch_process(['streamlink', '--title', 'hello world'])
@@ -103,7 +103,7 @@ class TestSlHelper(unittest.TestCase):
         passed_tokens = mock_popen.call_args[0][0]
         self.assertIn('hello world', passed_tokens)
 
-    @patch('lurkiti.slhelper.subprocess.Popen', side_effect=Exception('boom'))
+    @patch('lurkiti.command.subprocess.Popen', side_effect=Exception('boom'))
     def test_launch_process_failure(self, mock_popen):
         ok = slhelper.launch_process('bad command')
         self.assertFalse(ok)
@@ -209,7 +209,7 @@ class TestSlHelper(unittest.TestCase):
         cmd = slhelper.build_launch_command(cfg, s)
         self.assertNotIn('--mpv', cmd)
 
-    @patch('lurkiti.slhelper.shutil.which', return_value=None)
+    @patch('lurkiti.command.shutil.which', return_value=None)
     def test_build_launch_command_uses_streamlink_when_clippiti_path_not_set(self, mock_which):
         cfg = DummyCfg()
         cfg.clippiti_path = None  # Not set, and not found in PATH (mocked)
@@ -226,7 +226,7 @@ class TestSlHelper(unittest.TestCase):
         self.assertEqual(cmd[0], 'streamlink')
         mock_which.assert_called_with('clippiti')
 
-    @patch('lurkiti.slhelper.shutil.which', return_value='/usr/local/bin/clippiti')
+    @patch('lurkiti.command.shutil.which', return_value='/usr/local/bin/clippiti')
     def test_build_launch_command_finds_clippiti_in_path(self, mock_which):
         cfg = DummyCfg()
         cfg.clippiti_path = None  # Not explicitly set, but found in PATH

@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 @contextmanager
 def mock_sls(streams_return=None, resolve_return=None, resolve_side_effect=None):
-  """Context manager that patches `lurkiti.slhelper.sls`.
+  """Context manager that patches `lurkiti.session.sls`.
 
   Parameters:
   - streams_return: value to return for `sls.streams()`
@@ -15,7 +15,7 @@ def mock_sls(streams_return=None, resolve_return=None, resolve_side_effect=None)
   - resolve_side_effect: exception to raise from `sls.resolve_url(...)`
   """
   # Patch both the source `sls` and any modules that imported it early
-  patches = [patch('lurkiti.slhelper.sls'), patch('lurkiti.ui.stream.sls')]
+  patches = [patch('lurkiti.session.sls'), patch('lurkiti.ui.stream.sls')]
   with patches[0] as mock_sls, patches[1] as mock_sls_ui:
     if streams_return is not None:
       mock_sls.streams.return_value = streams_return

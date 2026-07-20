@@ -94,9 +94,5 @@
       "width": 900,
       "height": 574
     }
-  },
-  "plugin_auth_args": [
-    "username",
-    "password"
-  ]
+  }
 }

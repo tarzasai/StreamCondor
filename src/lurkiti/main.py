@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import QApplication, QMessageBox
 from streamlink.exceptions import StreamlinkError, NoPluginError
 
 from lurkiti.ui.trayicon import TrayIcon
-from lurkiti.slhelper import load_sl_user_stuff
+from lurkiti.session import load_sl_user_stuff
 
 log = logging.getLogger(__name__)
 
