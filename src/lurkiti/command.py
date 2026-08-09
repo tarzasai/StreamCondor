@@ -1,5 +1,6 @@
 import os
 import sys
+import signal
 import logging
 import shlex
 import shutil
@@ -18,6 +19,18 @@ LOG_LEVEL_MAP = {
 }
 
 log = logging.getLogger(__name__)
+
+
+def configure_child_reaping() -> None:
+  '''
+  Prevent launched players from lingering as zombies (<defunct>).
+  Players are spawned fire-and-forget (detached, own session) and never wait()ed
+  on, so on POSIX the kernel keeps each exited child around until we reap it.
+  Setting SIGCHLD to SIG_IGN lets the kernel reap them automatically.
+  Must be called from the main thread.
+  '''
+  if hasattr(signal, 'SIGCHLD'):
+    signal.signal(signal.SIGCHLD, signal.SIG_IGN)
 
 
 def launch_process(command: str | list[str]) -> bool:

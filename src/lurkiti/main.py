@@ -10,6 +10,7 @@ from streamlink.exceptions import StreamlinkError, NoPluginError
 
 from lurkiti.ui.trayicon import TrayIcon
 from lurkiti.session import load_sl_user_stuff
+from lurkiti.command import configure_child_reaping
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +72,7 @@ def main() -> int:
   except Exception:
     pass ## Older Qt bindings or platforms may not support this; ignore safely.
   app.setQuitOnLastWindowClosed(False)
+  configure_child_reaping() ## after QApplication so Qt doesn't override our SIGCHLD disposition
   sys.excepthook = excepthook ## uses QMessageBox so must be set after QApplication
   load_sl_user_stuff()  ## also requires QApplication
   tray_icon = TrayIcon(app, args.config)
