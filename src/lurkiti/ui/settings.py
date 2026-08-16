@@ -78,7 +78,7 @@ def _format_absolute_time(timestamp: float | None) -> str:
 
 class StreamTreeNode:
 
-  def __init__(self, data: Stream | str | None, parent: 'StreamTreeNode' | None = None):
+  def __init__(self, data: Stream | str | None, parent: 'StreamTreeNode | None' = None):
     """Initialize tree node.
 
     Args:
@@ -98,7 +98,7 @@ class StreamTreeNode:
   def add_child(self, child: 'StreamTreeNode') -> None:
     self.children.append(child)
 
-  def child(self, row: int) -> 'StreamTreeNode' | None:
+  def child(self, row: int) -> 'StreamTreeNode | None':
     if 0 <= row < len(self.children):
       return self.children[row]
     return None
