@@ -81,7 +81,7 @@ class TrayIcon(QSystemTrayIcon):
       self.menu.addSeparator()
     # add always on streams
     perma_streams = self.monitor.get_perma_streams()
-    if len(alive_streams) > 10 and len(perma_streams) > 0:
+    if (self.cfg.always_on_submenu or len(alive_streams) > 10) and len(perma_streams) > 0:
       perma_menu = self.menu.addMenu('Always Live')
       perma_icon = QIcon.fromTheme('network-wireless', QIcon.fromTheme('network-transmit-receive'))
       if not perma_icon.isNull():

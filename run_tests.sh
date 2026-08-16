@@ -20,8 +20,8 @@ export PYTEST_QT_API=${PYTEST_QT_API:-pyqt6}
 # Ensure package sources are importable
 export PYTHONPATH=${PYTHONPATH:-$ROOT_DIR/src}
 
-# Run pytest with any args passed through
-# Note: coverage collection triggers segfaults in this environment (Python 3.14 + PyQt6).
-# Use `pytest --cov=src` directly in VS Code test runner or run coverage manually
-# after tests pass.
-exec "$PY" -m pytest "$@"
+# Run pytest with any args passed through.
+# --forked isolates each test in its own process, avoiding cross-file Qt/PyQt6
+# state leakage that segfaults the shared-process run. Coverage should be
+# collected via a separate run if needed.
+exec "$PY" -m pytest --forked "$@"

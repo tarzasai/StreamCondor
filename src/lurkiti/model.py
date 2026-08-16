@@ -71,6 +71,7 @@ class ConfigModel(BaseModelWithEmptyToNone):
   alternate_player_args: str | None = Field(default=None, description="Alternate media player arguments")
   clippiti_path: str | None = Field(default=None, description="Path to Clippiti executable")
   tray_icon_action: TrayIconAction = Field(default=TrayIconAction.NOTHING, description="Action on tray icon left-click")
+  always_on_submenu: bool = Field(default=False, description="Always group always-on streams in a tray submenu")
   streams: dict[str, Stream] = Field(default_factory=dict, description="Configured streams")
   windows: dict[str, Geometry] | None = Field(default_factory=dict, description="Window geometry settings")
 
@@ -149,6 +150,14 @@ class Configuration(QObject):
   @default_notify.setter
   def default_notify(self, value: bool) -> None:
     self.set('default_notify', value)
+
+  @property
+  def always_on_submenu(self) -> bool:
+    return self._config.always_on_submenu
+
+  @always_on_submenu.setter
+  def always_on_submenu(self, value: bool) -> None:
+    self.set('always_on_submenu', value)
 
   @property
   def tray_icon_action(self) -> TrayIconAction:

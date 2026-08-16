@@ -4,7 +4,7 @@ from datetime import datetime
 from PyQt6.QtWidgets import (
   QWidget, QFormLayout, QVBoxLayout, QHBoxLayout, QTabWidget, QTreeView, QPushButton, QToolButton,
   QLabel, QSpinBox, QCheckBox, QComboBox, QLineEdit, QTextEdit, QSizePolicy,
-  QMessageBox, QAbstractItemView
+  QMessageBox, QAbstractItemView, QGraphicsOpacityEffect
 )
 from PyQt6.QtCore import Qt, QAbstractItemModel, QModelIndex, QItemSelection
 from PyQt6.QtGui import QIcon, QFont
@@ -415,6 +415,12 @@ class SettingsWindow(QWidget):
     self.combo_tray_icon_action.currentIndexChanged.connect(
       lambda index: self.cfg.set('tray_icon_action', self.combo_tray_icon_action.itemData(index).value)
     )
+    # Always-on streams submenu
+    self.check_always_on_submenu = QCheckBox("to always group always-on streams in a submenu")
+    self.check_always_on_submenu.setMinimumHeight(24)
+    self.check_always_on_submenu.stateChanged.connect(
+      lambda state: self.cfg.set('always_on_submenu', state == Qt.CheckState.Checked.value)
+    )
     # Default quality
     self.combo_default_quality = QComboBox()
     self.combo_default_quality.addItems(['best', '1080p', '720p', '480p', '360p', '160p', 'worst'])
@@ -475,6 +481,17 @@ class SettingsWindow(QWidget):
     self.text_clippiti_path.textChanged.connect(
       lambda text: self.cfg.set('clippiti_path', text)
     )
+    hint_clippiti = QLabel('''<html><head/><body><span>
+      OPTIONAL: Clippiti is an open source livestream player with built-in clipping support.
+      <a href="https://github.com/tarzasai/clippiti#clippiti" title="asd">
+        <span style=" text-decoration: underline; color:#4285f4;">More info on the homepage</span>
+      </a></span>
+    </body></html>''')
+    hint_clippiti.setOpenExternalLinks(True)
+    hint_clippiti.setContentsMargins(0, 0, 6, 0)
+    _hint_clippiti_dim = QGraphicsOpacityEffect(hint_clippiti)
+    _hint_clippiti_dim.setOpacity(0.7)
+    hint_clippiti.setGraphicsEffect(_hint_clippiti_dim)
     # Alternate media player args (text area with monospace font)
     self.text_alternate_player_args = QTextEdit()
     self.text_alternate_player_args.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -492,10 +509,12 @@ class SettingsWindow(QWidget):
     form_layout.addRow('Check interval', self.spin_check_interval)
     form_layout.addRow('Notifications', self.check_default_notify)
     form_layout.addRow('Icon left click', self.combo_tray_icon_action)
+    form_layout.addRow('AoS submenu', self.check_always_on_submenu)
     form_layout.addRow('Default quality', self.combo_default_quality)
     form_layout.addRow('Streamlink cfg', self.row_reload_streamlink)
     form_layout.addRow(hint_sl_args, self.text_default_sl_args)
     form_layout.addRow('Clippiti path', self.text_clippiti_path)
+    form_layout.addRow(None, hint_clippiti)
     form_layout.addRow('Default player', self.text_default_player)
     form_layout.addRow('Def. player args', self.text_default_player_args)
     form_layout.addRow('Alternate player', self.text_alternate_player)
@@ -553,6 +572,7 @@ class SettingsWindow(QWidget):
     self.check_autostart_monitoring.blockSignals(True)
     self.check_default_notify.blockSignals(True)
     self.combo_tray_icon_action.blockSignals(True)
+    self.check_always_on_submenu.blockSignals(True)
     self.spin_check_interval.blockSignals(True)
     self.combo_default_quality.blockSignals(True)
     self.text_default_sl_args.blockSignals(True)
@@ -568,6 +588,7 @@ class SettingsWindow(QWidget):
       if self.combo_tray_icon_action.itemData(i) == self.cfg.tray_icon_action:
         self.combo_tray_icon_action.setCurrentIndex(i)
         break
+    self.check_always_on_submenu.setChecked(self.cfg.always_on_submenu)
     self.spin_check_interval.setValue(self.cfg.check_interval_mins)
     default_quality = self.cfg.default_quality
     index = self.combo_default_quality.findText(default_quality)
@@ -583,6 +604,7 @@ class SettingsWindow(QWidget):
     self.check_autostart_monitoring.blockSignals(False)
     self.check_default_notify.blockSignals(False)
     self.combo_tray_icon_action.blockSignals(False)
+    self.check_always_on_submenu.blockSignals(False)
     self.spin_check_interval.blockSignals(False)
     self.combo_default_quality.blockSignals(False)
     self.text_default_sl_args.blockSignals(False)

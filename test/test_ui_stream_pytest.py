@@ -23,10 +23,18 @@ def write_tmp_config(tmp_path):
 def test_stream_preview_updates(app, tmp_path, mock_sls):
     from lurkiti.model import Configuration
     from lurkiti.ui.stream import StreamDialog
+
+    class _FakePlugin:
+        def __init__(self, session, url):
+            pass
+        def get_metadata(self):
+            return {'author': 'Test'}
+
     cfg_path = write_tmp_config(tmp_path)
     cfg = Configuration(Path(cfg_path))
     # patch sls.resolve_url so dialog creation and updates won't call real Streamlink
-    with mock_sls(resolve_return=('youtube',)) as mock_sls_obj:
+    with mock_sls(resolve_return=('youtube', _FakePlugin, 'https://example.com/video')), \
+         patch('lurkiti.ui.stream.get_stream_icon', return_value=None):
         # create dialog and fill fields while patched
         dlg = StreamDialog(None, cfg)
         dlg.text_url.setText('https://example.com/video')
